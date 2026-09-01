@@ -1,0 +1,68 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <world name="forest_open_trail">
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics" />
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands" />
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster" />
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors" />
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu" />
+    <plugin filename="gz-sim-navsat-system" name="gz::sim::systems::NavSat" />
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 35 0.5 0.3 0.2</pose>
+      <diffuse>0.92 0.90 0.82 1.0</diffuse>
+      <specular>0.3 0.3 0.3 1.0</specular>
+      <direction>-0.4 0.2 -1.0</direction>
+    </light>
+
+    <scene>
+      <ambient>0.60 0.65 0.60 1.0</ambient>
+      <background>0.5 0.7 0.9 1.0</background>
+      <shadows>true</shadows>
+    </scene>
+
+    <!-- Ground -->
+    <model name="ground">
+      <static>true</static>
+      <link name="link">
+        <collision name="col">
+          <geometry><plane><normal>0 0 1</normal><size>80 80</size></plane></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><plane><normal>0 0 1</normal><size>80 80</size></plane></geometry>
+          <material><ambient>0.20 0.35 0.16 1.0</ambient><diffuse>0.25 0.40 0.20 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Open Trail Segments -->
+    <model name="trail_1"><static>true</static><pose>4.0 0.0 0.002 0 0 0</pose>
+      <link name="link"><visual name="v"><geometry><box><size>8.5 2.6 0.004</size></box></geometry>
+      <material><ambient>0.55 0.42 0.28 1.0</ambient><diffuse>0.65 0.52 0.35 1.0</diffuse></material></visual></link>
+    </model>
+
+    <model name="trail_2"><static>true</static><pose>12.0 1.0 0.002 0 0 0.15</pose>
+      <link name="link"><visual name="v"><geometry><box><size>8.5 2.6 0.004</size></box></geometry>
+      <material><ambient>0.55 0.42 0.28 1.0</ambient><diffuse>0.65 0.52 0.35 1.0</diffuse></material></visual></link>
+    </model>
+
+    <model name="trail_3"><static>true</static><pose>18.0 2.5 0.002 0 0 0.25</pose>
+      <link name="link"><visual name="v"><geometry><box><size>6.5 2.6 0.004</size></box></geometry>
+      <material><ambient>0.55 0.42 0.28 1.0</ambient><diffuse>0.65 0.52 0.35 1.0</diffuse></material></visual></link>
+    </model>
+
+    <!-- Point A & Point B -->
+    <model name="point_a"><static>true</static><pose>0 0 0.006 0 0 0</pose><link name="l"><visual name="v"><geometry><cylinder><radius>1.1</radius><length>0.01</length></cylinder></geometry><material><ambient>0.2 0.5 0.9 1</ambient><diffuse>0.2 0.5 0.9 1</diffuse></material></visual></link></model>
+    <model name="point_b"><static>true</static><pose>20 3.0 0.006 0 0 0</pose><link name="l"><visual name="v"><geometry><cylinder><radius>1.3</radius><length>0.01</length></cylinder></geometry><material><ambient>0.2 0.85 0.4 1</ambient><diffuse>0.2 0.85 0.4 1</diffuse></material></visual></link></model>
+
+    <!-- Sparse Trees -->
+    <model name="tree_1"><static>true</static><pose>5.0 3.5 0 0 0 0</pose><link name="l"><visual name="t"><pose>0 0 1.1 0 0 0</pose><geometry><cylinder><radius>0.22</radius><length>2.2</length></cylinder></geometry><material><ambient>0.35 0.22 0.12 1</ambient><diffuse>0.45 0.3 0.18 1</diffuse></material></visual><visual name="c"><pose>0 0 3 0 0 0</pose><geometry><cone><radius>1.3</radius><length>2.6</length></cone></geometry><material><ambient>0.08 0.32 0.1 1</ambient><diffuse>0.12 0.42 0.16 1</diffuse></material></visual><collision name="col"><pose>0 0 1.1 0 0 0</pose><geometry><cylinder><radius>0.25</radius><length>2.2</length></cylinder></geometry></collision></link></model>
+    <model name="tree_2"><static>true</static><pose>12.0 -3.2 0 0 0 0</pose><link name="l"><visual name="t"><pose>0 0 1.1 0 0 0</pose><geometry><cylinder><radius>0.22</radius><length>2.2</length></cylinder></geometry><material><ambient>0.35 0.22 0.12 1</ambient><diffuse>0.45 0.3 0.18 1</diffuse></material></visual><visual name="c"><pose>0 0 3 0 0 0</pose><geometry><cone><radius>1.3</radius><length>2.6</length></cone></geometry><material><ambient>0.08 0.32 0.1 1</ambient><diffuse>0.12 0.42 0.16 1</diffuse></material></visual><collision name="col"><pose>0 0 1.1 0 0 0</pose><geometry><cylinder><radius>0.25</radius><length>2.2</length></cylinder></geometry></collision></link></model>
+  </world>
+</sdf>

@@ -1,0 +1,568 @@
+/* ==============================================================================
+   HERCULES Dark Tactical Robotics Mission Control Theme
+   ============================================================================== */
+
+:root {
+  --bg-dark: #070a0e;
+  --panel-bg: #0d121a;
+  --panel-header: #121924;
+  --border-color: #1a2536;
+  --border-focus: #00f0ff;
+  
+  --text-main: #e2e8f0;
+  --text-muted: #8492a6;
+  --text-bright: #ffffff;
+
+  --cyan: #00f0ff;
+  --cyan-dim: rgba(0, 240, 255, 0.15);
+  --emerald: #00ff88;
+  --emerald-dim: rgba(0, 255, 136, 0.15);
+  --amber: #ffb700;
+  --amber-dim: rgba(255, 183, 0, 0.15);
+  --crimson: #ff2a55;
+  --crimson-dim: rgba(255, 42, 85, 0.18);
+  --purple: #b05cff;
+
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Consolas', 'Courier New', monospace;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  overflow-x: hidden;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==================== Top Status Bar ==================== */
+.top-header {
+  background-color: var(--panel-bg);
+  border-bottom: 1px solid var(--border-color);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  flex-shrink: 0;
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-badge {
+  background: linear-gradient(135deg, var(--cyan), #0077ff);
+  color: #000;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 3px 7px;
+  border-radius: 3px;
+  letter-spacing: 1px;
+}
+
+.brand-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--text-bright);
+}
+
+.brand-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.status-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pill {
+  background-color: var(--panel-header);
+  border: 1px solid var(--border-color);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.pill-dot.green { background-color: var(--emerald); box-shadow: 0 0 8px var(--emerald); }
+.pill-dot.cyan  { background-color: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+.pill-dot.amber { background-color: var(--amber); box-shadow: 0 0 8px var(--amber); }
+
+/* Prominent GPS-Denied Banner */
+.gps-denied-badge {
+  background-color: var(--crimson-dim);
+  border: 1px solid var(--crimson);
+  color: var(--crimson);
+  font-weight: 800;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.5px;
+  animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 4px rgba(255, 42, 85, 0.2); }
+  50% { box-shadow: 0 0 14px rgba(255, 42, 85, 0.5); }
+  100% { box-shadow: 0 0 4px rgba(255, 42, 85, 0.2); }
+}
+
+/* ==================== Grid Layout ==================== */
+.main-dashboard {
+  display: grid;
+  grid-template-columns: 440px 1fr 380px;
+  grid-template-rows: 1fr 240px;
+  gap: 10px;
+  padding: 10px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.card {
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.card-header {
+  background-color: var(--panel-header);
+  border-bottom: 1px solid var(--border-color);
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  letter-spacing: 0.5px;
+}
+
+.card-header .tag {
+  font-size: 10px;
+  color: var(--cyan);
+  background: var(--cyan-dim);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.card-body {
+  padding: 10px;
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+/* ==================== Camera Viewport ==================== */
+.camera-container {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  background: #000;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.camera-stream {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.camera-controls {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.btn-mode {
+  flex: 1;
+  background: var(--panel-header);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 5px 2px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-mode.active, .btn-mode:hover {
+  background: var(--cyan-dim);
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+/* ==================== 3D World Viewport ==================== */
+.sim-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #06090e;
+  border-radius: 4px;
+}
+
+#threejs-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.viewport-overlay-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+  z-index: 10;
+}
+
+.btn-cam {
+  background: rgba(13, 18, 26, 0.85);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 5px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+
+.btn-cam.active, .btn-cam:hover {
+  background: var(--cyan);
+  color: #000;
+  font-weight: 700;
+}
+
+/* ==================== Telemetry & Metrics Widgets ==================== */
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.metric-box {
+  background: var(--panel-header);
+  border: 1px solid var(--border-color);
+  padding: 8px 10px;
+  border-radius: 4px;
+}
+
+.metric-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.metric-val {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--cyan);
+}
+
+.metric-val.emerald { color: var(--emerald); }
+.metric-val.amber { color: var(--amber); }
+.metric-val.crimson { color: var(--crimson); }
+
+/* ==================== Tables ==================== */
+.tech-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  margin-top: 6px;
+}
+
+.tech-table th {
+  text-align: left;
+  padding: 5px 6px;
+  background: var(--panel-header);
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tech-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid rgba(26, 37, 54, 0.5);
+}
+
+.risk-tag {
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.risk-tag.safe { background: var(--emerald-dim); color: var(--emerald); }
+.risk-tag.caution { background: var(--amber-dim); color: var(--amber); }
+.risk-tag.hazard { background: var(--crimson-dim); color: var(--crimson); }
+
+/* ==================== 2D Map Canvas ==================== */
+.map-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: #06090e;
+  border-radius: 4px;
+}
+
+#map-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* ==================== Event Alert Banner ==================== */
+.alert-banner {
+  background: var(--amber-dim);
+  border: 1px solid var(--amber);
+  color: var(--amber);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.alert-banner.success {
+  background: var(--emerald-dim);
+  border-color: var(--emerald);
+  color: var(--emerald);
+}
+
+.alert-banner.hazard {
+  background: var(--crimson-dim);
+  border-color: var(--crimson);
+  color: var(--crimson);
+}
+
+/* ==================== Mission Control Buttons ==================== */
+.control-btn-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.btn-ctrl {
+  background: var(--panel-header);
+  border: 1px solid var(--border-color);
+  color: var(--text-bright);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 8px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.btn-ctrl.primary { background: var(--cyan); color: #000; border-color: var(--cyan); }
+.btn-ctrl.success { background: var(--emerald); color: #000; border-color: var(--emerald); }
+.btn-ctrl.danger  { background: var(--crimson); color: #fff; border-color: var(--crimson); }
+.btn-ctrl:hover   { filter: brightness(1.15); transform: translateY(-1px); }
+
+/* ==================== Logs ==================== */
+.log-stream {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.log-entry .time { color: var(--cyan); margin-right: 6px; }
+.log-entry.WARN  { color: var(--amber); }
+.log-entry.SUCCESS { color: var(--emerald); }
+.log-entry.ERROR { color: var(--crimson); }
+
+/* ==================== Viewport Tabs & Multi-View Navigation ==================== */
+.viewport-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-tab {
+  background: #080c14;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-tab.active, .btn-tab:hover {
+  background: var(--cyan-dim);
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+/* ==================== Tactical Pi-Cam Camera Reticle ==================== */
+.camera-hud-reticle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  box-sizing: border-box;
+}
+
+.crosshair-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(0, 240, 255, 0.7);
+  border-radius: 50%;
+}
+.crosshair-center::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -6px;
+  right: -6px;
+  height: 1px;
+  background: rgba(0, 240, 255, 0.8);
+}
+.crosshair-center::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  bottom: -6px;
+  width: 1px;
+  background: rgba(0, 240, 255, 0.8);
+}
+
+.hud-horizon-line {
+  position: absolute;
+  top: 52%;
+  left: 20%;
+  right: 20%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.5), transparent);
+}
+
+.hud-tag {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 2px;
+  background: rgba(4, 7, 13, 0.75);
+  border: 1px solid rgba(0, 240, 255, 0.4);
+}
+.hud-tag.top-left { top: 6px; left: 6px; color: var(--cyan); }
+.hud-tag.top-right { top: 6px; right: 6px; color: var(--purple); border-color: rgba(176, 92, 255, 0.5); }
+.hud-tag.bottom-left { bottom: 6px; left: 6px; color: var(--emerald); border-color: rgba(0, 230, 153, 0.5); }
+.hud-tag.bottom-right { bottom: 6px; right: 6px; color: var(--amber); border-color: rgba(255, 179, 0, 0.5); }
+
+/* ==================== Google Maps Satellite Viewport ==================== */
+.gmaps-telemetry-badge {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(5, 9, 15, 0.88);
+  border: 1px solid var(--cyan);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #fff;
+  line-height: 1.5;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+  z-index: 10;
+}
+
+/* ==================== Dedicated Robot Eyes FPV Fullscreen ==================== */
+.fpv-flight-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.fpv-compass-strip {
+  align-self: center;
+  background: rgba(4, 7, 13, 0.8);
+  border: 1px solid var(--cyan);
+  border-radius: 3px;
+  padding: 3px 15px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cyan);
+  letter-spacing: 2px;
+}
+
+.fpv-gemini-box {
+  background: rgba(5, 9, 15, 0.85);
+  border: 1px solid rgba(176, 92, 255, 0.6);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  max-width: 80%;
+}
+

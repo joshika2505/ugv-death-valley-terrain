@@ -1,0 +1,239 @@
+Panels:
+  - Class: rviz_common/Displays
+    Help Height: 78
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /RobotModel1
+        - /LaserScan1
+        - /TraversabilityCloud1
+        - /NavigationMarkers1
+        - /AI Path Segmentation1
+        - /Visual Beacon Camera1
+      Splitter Ratio: 0.55
+    Tree Height: 600
+  - Class: rviz_common/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 1
+      Class: rviz_default_plugins/Grid
+      Color: 120; 120; 120
+      Enabled: true
+      Line Style:
+        Line Width: 0.03
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 30
+      Reference Frame: <Fixed Frame>
+      Value: true
+
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: ""
+      Description Source: Topic
+      Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot_description
+      Enabled: true
+      Name: RobotModel
+      Visual Enabled: true
+
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 25.0
+        Min Value: 0.15
+        Value: true
+      Channel Name: intensity
+      Class: rviz_default_plugins/LaserScan
+      Color: 255; 50; 50
+      Color Transformer: FlatColor
+      Decay Time: 0
+      Depth: 5
+      Durability Policy: Volatile
+      Enabled: true
+      History Policy: Keep Last
+      Max Color: 255; 0; 0
+      Min Color: 0; 255; 0
+      Name: LaserScan
+      Position Tolerance: 0.1
+      QOS Prediction:
+        Reliability: Reliable
+      Reliability Policy: Reliable
+      Selectable: true
+      Size (Pixels): 4
+      Size (m): 0.06
+      Style: Flat Squares
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /scan
+      Use Fixed Frame: true
+      Use rainbow: false
+      Value: true
+
+    - Alpha: 0.9
+      Autocompute Intensity Bounds: true
+      Channel Name: intensity
+      Class: rviz_default_plugins/PointCloud2
+      Color: 0; 255; 0
+      Color Transformer: Intensity
+      Decay Time: 0
+      Depth: 5
+      Durability Policy: Volatile
+      Enabled: true
+      History Policy: Keep Last
+      Name: TraversabilityCloud
+      Position Tolerance: 0.1
+      Reliability Policy: Reliable
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.05
+      Style: Flat Squares
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /sih_ugv/perception/traversability_cloud
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: NavigationMarkers
+      Namespaces:
+        {trajectory: true, waypoints: true}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /sih_ugv/navigation/markers
+      Value: true
+
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+      Marker Scale: 0.3
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: false
+      Tree:
+        {}
+      Update Interval: 0
+      Value: true
+
+    - Class: rviz_default_plugins/Image
+      Data Type: sensor_msgs/msg/Image
+      Decay Time: 0
+      Depth: 5
+      Durability Policy: Volatile
+      Enabled: true
+      History Policy: Keep Last
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: AI Path Segmentation
+      Normalize Range: false
+      Reliability Policy: Reliable
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /sih_ugv/perception/segmented_image
+      Value: true
+
+    - Class: rviz_default_plugins/Image
+      Data Type: sensor_msgs/msg/Image
+      Decay Time: 0
+      Depth: 5
+      Durability Policy: Volatile
+      Enabled: true
+      History Policy: Keep Last
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Visual Beacon Camera
+      Normalize Range: false
+      Reliability Policy: Reliable
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /sih_ugv/beacon/annotated_image
+      Value: true
+
+  Enabled: true
+  Global Options:
+    Background Color: 38; 40; 45
+    Fixed Frame: odom
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/Interact
+      Hide Inactive Objects: true
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/SetInitialPose
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /initialpose
+    - Class: rviz_default_plugins/SetGoal
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /goal_pose
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 16.5
+      Focal Point:
+        X: 8.0
+        Y: 2.0
+        Z: 0.5
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.01
+      Pitch: 0.55
+      Target Frame: <Fixed Frame>
+      Value: Orbit (rviz)
+      Yaw: 0.40
+Window Geometry:
+  Height: 900
+  Width: 1400
+  X: 50
+  Y: 50

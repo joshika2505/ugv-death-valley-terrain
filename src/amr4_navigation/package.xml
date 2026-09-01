@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>amr4_navigation</name>
+  <version>1.0.0</version>
+  <description>Online SLAM and Nav2 autonomous navigation for AMR-4</description>
+  <maintainer email="joshika@todo.todo">joshika</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>nav2_bringup</exec_depend>
+  <exec_depend>slam_toolbox</exec_depend>
+  <exec_depend>nav2_costmap_2d</exec_depend>
+  <exec_depend>nav2_navfn_planner</exec_depend>
+  <exec_depend>nav2_dwb_controller</exec_depend>
+  <exec_depend>nav2_lifecycle_manager</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

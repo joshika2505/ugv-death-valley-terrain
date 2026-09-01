@@ -1,0 +1,474 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <world name="outskirts_terrain_world">
+    <!-- ==================== High-Precision Physics Engine ==================== -->
+    <physics name="1ms" type="ode">
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>250</real_time_update_rate>
+      <ode>
+        <solver>
+          <type>quick</type>
+          <iters>50</iters>
+          <sor>1.3</sor>
+        </solver>
+        <constraints>
+          <cfm>0.00001</cfm>
+          <erp>0.2</erp>
+          <contact_max_correcting_vel>100.0</contact_max_correcting_vel>
+          <contact_surface_layer>0.001</contact_surface_layer>
+        </constraints>
+      </ode>
+    </physics>
+
+    <!-- ==================== Core Simulation Plugins ==================== -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics" />
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands" />
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster" />
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu" />
+
+    <!-- GUI Camera Automatically Tracking and Following MARBLE Husky UGV -->
+    <gui fullscreen="0">
+      <camera name="user_camera">
+        <pose>-4.0 -6.0 6.0 0 0.65 0.95</pose>
+        <view_controller>orbit</view_controller>
+        <track>
+          <target>forest_ugv</target>
+          <min_dist>3.0</min_dist>
+          <max_dist>12.0</max_dist>
+        </track>
+      </camera>
+    </gui>
+
+    <!-- ==================== Atmospheric Sun & Outdoor Lighting ==================== -->
+    <scene>
+      <ambient>0.65 0.70 0.75 1.0</ambient>
+      <background>0.55 0.75 0.92 1.0</background>
+      <shadows>true</shadows>
+      <grid>false</grid>
+    </scene>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>15 20 40 0 0.75 0.55</pose>
+      <diffuse>0.98 0.95 0.88 1.0</diffuse>
+      <specular>0.4 0.4 0.4 1.0</specular>
+      <direction>-0.5 0.3 -0.9</direction>
+    </light>
+
+    <!-- ==================== MARBLE HUSKY AUTONOMOUS UGV ==================== -->
+    <include>
+      <uri>model://marble_husky_sensor_config_1</uri>
+      <name>forest_ugv</name>
+      <pose>0.0 0.0 0.22 0 0 0</pose>
+    </include>
+
+    <!-- ==================== BASE TERRAIN & ROLLING GROUND ==================== -->
+    <model name="base_outskirts_ground">
+      <static>true</static>
+      <link name="link">
+        <collision name="col">
+          <geometry><plane><normal>0 0 1</normal><size>120 120</size></plane></geometry>
+          <surface><friction><ode><mu>0.9</mu><mu2>0.9</mu2></ode></friction></surface>
+        </collision>
+        <visual name="vis">
+          <geometry><plane><normal>0 0 1</normal><size>120 120</size></plane></geometry>
+          <material>
+            <ambient>0.32 0.40 0.22 1.0</ambient>
+            <diffuse>0.36 0.44 0.25 1.0</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Uneven Terrain Elevation Berms (Rolling Outskirts Topography) -->
+    <model name="terrain_ridge_north">
+      <static>true</static>
+      <pose>10.0 12.0 0.45 0.08 0.04 0.1</pose>
+      <link name="link">
+        <collision name="col"><geometry><box><size>28.0 8.0 0.9</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>28.0 8.0 0.9</size></box></geometry>
+          <material><ambient>0.28 0.36 0.20 1.0</ambient><diffuse>0.32 0.40 0.22 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="terrain_ridge_south">
+      <static>true</static>
+      <pose>12.0 -9.0 0.40 -0.06 0.05 -0.1</pose>
+      <link name="link">
+        <collision name="col"><geometry><box><size>30.0 8.0 0.8</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>30.0 8.0 0.8</size></box></geometry>
+          <material><ambient>0.30 0.38 0.22 1.0</ambient><diffuse>0.34 0.42 0.24 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== OUTSKIRTS ROAD & TRAIL NETWORK ==================== -->
+    <!-- 1. Main Outskirts Asphalt Road (Start Point A to Roadblock at x=14.0m) -->
+    <model name="main_road_segment1">
+      <static>true</static>
+      <pose>7.0 0.0 0.01 0 0 0</pose>
+      <link name="link">
+        <collision name="col"><geometry><box><size>15.0 5.2 0.02</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>15.0 5.2 0.02</size></box></geometry>
+          <material><ambient>0.18 0.18 0.20 1.0</ambient><diffuse>0.22 0.22 0.24 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Road Centerline Stripes -->
+    <model name="road_centerline_1">
+      <static>true</static>
+      <pose>6.0 0.0 0.02 0 0 0</pose>
+      <link name="link">
+        <visual name="vis">
+          <geometry><box><size>12.0 0.15 0.005</size></box></geometry>
+          <material><ambient>0.9 0.85 0.1 1.0</ambient><diffuse>0.95 0.9 0.1 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 2. North Crossroad / Off-Road Dirt Trail Bypass (Turns North at x=11.8m toward Outpost/Hospital) -->
+    <model name="north_trail_bypass">
+      <static>true</static>
+      <pose>11.8 4.5 0.01 0 0 1.5708</pose>
+      <link name="link">
+        <collision name="col"><geometry><box><size>9.0 4.2 0.02</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>9.0 4.2 0.02</size></box></geometry>
+          <material><ambient>0.42 0.35 0.24 1.0</ambient><diffuse>0.48 0.40 0.28 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 3. Hospital / Outpost Approach Road (East-West axis connecting Trail Bypass to Point B) -->
+    <model name="hospital_approach_driveway">
+      <static>true</static>
+      <pose>16.0 8.0 0.01 0 0 0</pose>
+      <link name="link">
+        <collision name="col"><geometry><box><size>11.0 4.4 0.02</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>11.0 4.4 0.02</size></box></geometry>
+          <material><ambient>0.24 0.24 0.26 1.0</ambient><diffuse>0.28 0.28 0.30 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== POINT B: EMERGENCY HOSPITAL & MEDICAL OUTPOST ==================== -->
+    <model name="hospital_outpost_facility">
+      <static>true</static>
+      <pose>23.5 8.0 0.0 0 0 0</pose>
+      
+      <!-- Main Clinic Wing -->
+      <link name="main_building">
+        <pose>0 0 3.5 0 0 0</pose>
+        <collision name="col"><geometry><box><size>7.0 7.0 7.0</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>7.0 7.0 7.0</size></box></geometry>
+          <material><ambient>0.88 0.90 0.94 1.0</ambient><diffuse>0.92 0.94 0.98 1.0</diffuse></material>
+        </visual>
+      </link>
+
+      <!-- Emergency Portico Entrance -->
+      <link name="portico">
+        <pose>-3.8 0 1.8 0 0 0</pose>
+        <collision name="col"><geometry><box><size>1.2 4.2 3.6</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>1.2 4.2 3.6</size></box></geometry>
+          <material><ambient>0.2 0.45 0.8 1.0</ambient><diffuse>0.25 0.55 0.9 1.0</diffuse></material>
+        </visual>
+      </link>
+
+      <!-- Hospital Red Cross Emissive Beacon -->
+      <link name="red_cross_h">
+        <pose>-4.45 0 2.6 0 0 0</pose>
+        <visual name="vis">
+          <geometry><box><size>0.08 1.6 0.45</size></box></geometry>
+          <material><ambient>1.0 0.1 0.1 1.0</ambient><diffuse>1.0 0.1 0.1 1.0</diffuse><emissive>0.6 0.0 0.0 1.0</emissive></material>
+        </visual>
+      </link>
+      <link name="red_cross_v">
+        <pose>-4.45 0 2.6 0 0 0</pose>
+        <visual name="vis">
+          <geometry><box><size>0.08 0.45 1.6</size></box></geometry>
+          <material><ambient>1.0 0.1 0.1 1.0</ambient><diffuse>1.0 0.1 0.1 1.0</diffuse><emissive>0.6 0.0 0.0 1.0</emissive></material>
+        </visual>
+      </link>
+
+      <!-- Roof Flashing Beacon Light -->
+      <link name="roof_beacon">
+        <pose>0 0 7.3 0 0 0</pose>
+        <visual name="vis">
+          <geometry><cylinder><radius>0.35</radius><length>0.6</length></cylinder></geometry>
+          <material><ambient>0.0 0.8 1.0 1.0</ambient><diffuse>0.0 0.9 1.0 1.0</diffuse><emissive>0.8 0.8 1.0 1.0</emissive></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Point B Parking Drop-Off Bay Marker -->
+    <model name="hospital_dropoff_pad">
+      <static>true</static>
+      <pose>18.0 8.0 0.02 0 0 0</pose>
+      <link name="link">
+        <visual name="vis">
+          <geometry><box><size>3.0 3.0 0.01</size></box></geometry>
+          <material><ambient>0.1 0.6 0.2 1.0</ambient><diffuse>0.15 0.7 0.25 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Parked Emergency Vehicle at Hospital -->
+    <model name="parked_ambulance">
+      <static>true</static>
+      <pose>21.0 4.8 1.1 0 0 0</pose>
+      <link name="body">
+        <collision name="col"><geometry><box><size>4.4 2.1 2.2</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>4.4 2.1 2.2</size></box></geometry>
+          <material><ambient>0.92 0.92 0.94 1.0</ambient><diffuse>0.95 0.95 0.98 1.0</diffuse></material>
+        </visual>
+      </link>
+      <link name="red_stripe">
+        <pose>0 0 0.1 0 0 0</pose>
+        <visual name="vis">
+          <geometry><box><size>4.45 2.15 0.25</size></box></geometry>
+          <material><ambient>0.9 0.1 0.1 1.0</ambient><diffuse>0.95 0.1 0.1 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== OUTSKIRTS ROADBLOCK & TACTICAL HAZARDS ==================== -->
+    <!-- Primary Roadwork Barricade at x=14.0m on Main Road (Forcing Outskirts Detour!) -->
+    <model name="roadblock_barricade">
+      <static>true</static>
+      <pose>14.2 0.0 0.55 0 0 0</pose>
+      <link name="link">
+        <collision name="col"><geometry><box><size>0.6 4.8 1.1</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>0.6 4.8 1.1</size></box></geometry>
+          <material><ambient>0.95 0.45 0.05 1.0</ambient><diffuse>0.98 0.50 0.10 1.0</diffuse></material>
+        </visual>
+      </link>
+      <link name="hazard_stripes">
+        <pose>0 0 0.1 0 0 0</pose>
+        <visual name="vis">
+          <geometry><box><size>0.62 4.82 0.35</size></box></geometry>
+          <material><ambient>0.95 0.95 0.95 1.0</ambient><diffuse>0.98 0.98 0.98 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Traffic Cones -->
+    <model name="traffic_cone_1">
+      <static>true</static>
+      <pose>13.2 1.5 0.40 0 0 0</pose>
+      <link name="link">
+        <collision name="col"><geometry><cylinder><radius>0.22</radius><length>0.80</length></cylinder></geometry></collision>
+        <visual name="vis">
+          <geometry><cylinder><radius>0.22</radius><length>0.80</length></cylinder></geometry>
+          <material><ambient>0.95 0.35 0.05 1.0</ambient><diffuse>0.98 0.40 0.08 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="traffic_cone_2">
+      <static>true</static>
+      <pose>13.2 -1.5 0.40 0 0 0</pose>
+      <link name="link">
+        <collision name="col"><geometry><cylinder><radius>0.22</radius><length>0.80</length></cylinder></geometry></collision>
+        <visual name="vis">
+          <geometry><cylinder><radius>0.22</radius><length>0.80</length></cylinder></geometry>
+          <material><ambient>0.95 0.35 0.05 1.0</ambient><diffuse>0.98 0.40 0.08 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== OUTSKIRTS RESIDENCES & BUILDINGS ==================== -->
+    <!-- Farmhouse Cottage 1 -->
+    <model name="cottage_1">
+      <static>true</static>
+      <pose>4.0 -6.5 2.2 0 0 0</pose>
+      <link name="body">
+        <collision name="col"><geometry><box><size>6.0 5.2 4.4</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>6.0 5.2 4.4</size></box></geometry>
+          <material><ambient>0.72 0.62 0.50 1.0</ambient><diffuse>0.76 0.66 0.54 1.0</diffuse></material>
+        </visual>
+      </link>
+      <link name="roof">
+        <pose>0 0 2.8 0 0 0</pose>
+        <visual name="vis">
+          <geometry><box><size>6.4 5.6 1.2</size></box></geometry>
+          <material><ambient>0.55 0.22 0.18 1.0</ambient><diffuse>0.60 0.25 0.20 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Farmhouse Cottage 2 -->
+    <model name="cottage_2">
+      <static>true</static>
+      <pose>18.0 -6.5 2.2 0 0 0</pose>
+      <link name="body">
+        <collision name="col"><geometry><box><size>6.5 5.5 4.4</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>6.5 5.5 4.4</size></box></geometry>
+          <material><ambient>0.78 0.76 0.72 1.0</ambient><diffuse>0.82 0.80 0.76 1.0</diffuse></material>
+        </visual>
+      </link>
+      <link name="roof">
+        <pose>0 0 2.8 0 0 0</pose>
+        <visual name="vis">
+          <geometry><box><size>6.9 5.9 1.2</size></box></geometry>
+          <material><ambient>0.25 0.35 0.45 1.0</ambient><diffuse>0.30 0.40 0.50 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Outskirts Workshop & Barn -->
+    <model name="barn_workshop">
+      <static>true</static>
+      <pose>4.5 7.5 2.2 0 0 0</pose>
+      <link name="body">
+        <collision name="col"><geometry><box><size>6.2 5.0 4.4</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>6.2 5.0 4.4</size></box></geometry>
+          <material><ambient>0.50 0.25 0.15 1.0</ambient><diffuse>0.55 0.28 0.18 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Parked Rural Pickup Truck -->
+    <model name="parked_pickup">
+      <static>true</static>
+      <pose>7.5 -1.6 0.9 0 0 0</pose>
+      <link name="body">
+        <collision name="col"><geometry><box><size>4.5 2.0 1.8</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>4.5 2.0 1.8</size></box></geometry>
+          <material><ambient>0.15 0.25 0.45 1.0</ambient><diffuse>0.20 0.30 0.55 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== NATURAL VEGETATION & BOULDER FIELDS ==================== -->
+    <!-- Pine Tree 1 -->
+    <model name="pine_tree_1">
+      <static>true</static>
+      <pose>1.5 3.2 0 0 0 0</pose>
+      <link name="trunk">
+        <pose>0 0 1.5 0 0 0</pose>
+        <collision name="col"><geometry><cylinder><radius>0.25</radius><length>3.0</length></cylinder></geometry></collision>
+        <visual name="vis">
+          <geometry><cylinder><radius>0.25</radius><length>3.0</length></cylinder></geometry>
+          <material><ambient>0.32 0.22 0.14 1.0</ambient><diffuse>0.36 0.25 0.16 1.0</diffuse></material>
+        </visual>
+      </link>
+      <link name="foliage">
+        <pose>0 0 4.2 0 0 0</pose>
+        <visual name="vis">
+          <geometry><cone><radius>1.6</radius><length>3.5</length></cone></geometry>
+          <material><ambient>0.12 0.35 0.16 1.0</ambient><diffuse>0.15 0.42 0.20 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Pine Tree 2 -->
+    <model name="pine_tree_2">
+      <static>true</static>
+      <pose>9.5 3.8 0 0 0 0</pose>
+      <link name="trunk">
+        <pose>0 0 1.5 0 0 0</pose>
+        <collision name="col"><geometry><cylinder><radius>0.25</radius><length>3.0</length></cylinder></geometry></collision>
+        <visual name="vis">
+          <geometry><cylinder><radius>0.25</radius><length>3.0</length></cylinder></geometry>
+          <material><ambient>0.32 0.22 0.14 1.0</ambient><diffuse>0.36 0.25 0.16 1.0</diffuse></material>
+        </visual>
+      </link>
+      <link name="foliage">
+        <pose>0 0 4.2 0 0 0</pose>
+        <visual name="vis">
+          <geometry><cone><radius>1.7</radius><length>3.6</length></cone></geometry>
+          <material><ambient>0.12 0.35 0.16 1.0</ambient><diffuse>0.15 0.42 0.20 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Pine Tree 3 -->
+    <model name="pine_tree_3">
+      <static>true</static>
+      <pose>15.2 11.5 0 0 0 0</pose>
+      <link name="trunk">
+        <pose>0 0 1.5 0 0 0</pose>
+        <collision name="col"><geometry><cylinder><radius>0.28</radius><length>3.0</length></cylinder></geometry></collision>
+        <visual name="vis">
+          <geometry><cylinder><radius>0.28</radius><length>3.0</length></cylinder></geometry>
+          <material><ambient>0.32 0.22 0.14 1.0</ambient><diffuse>0.36 0.25 0.16 1.0</diffuse></material>
+        </visual>
+      </link>
+      <link name="foliage">
+        <pose>0 0 4.5 0 0 0</pose>
+        <visual name="vis">
+          <geometry><cone><radius>1.8</radius><length>4.0</length></cone></geometry>
+          <material><ambient>0.10 0.32 0.14 1.0</ambient><diffuse>0.12 0.38 0.18 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Natural Granite Boulders -->
+    <model name="granite_boulder_1">
+      <static>true</static>
+      <pose>14.5 5.5 0.45 0 0 0.4</pose>
+      <link name="link">
+        <collision name="col"><geometry><box><size>1.2 0.9 0.9</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>1.2 0.9 0.9</size></box></geometry>
+          <material><ambient>0.40 0.42 0.44 1.0</ambient><diffuse>0.46 0.48 0.50 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="granite_boulder_2">
+      <static>true</static>
+      <pose>9.2 6.8 0.50 0 0 -0.6</pose>
+      <link name="link">
+        <collision name="col"><geometry><box><size>1.4 1.1 1.0</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>1.4 1.1 1.0</size></box></geometry>
+          <material><ambient>0.38 0.40 0.42 1.0</ambient><diffuse>0.44 0.46 0.48 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Outskirts Perimeter Fences & Walls -->
+    <model name="perimeter_fence_north">
+      <static>true</static>
+      <pose>12.0 14.5 0.75 0 0 0</pose>
+      <link name="link">
+        <collision name="col"><geometry><box><size>28.0 0.3 1.5</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>28.0 0.3 1.5</size></box></geometry>
+          <material><ambient>0.45 0.35 0.25 1.0</ambient><diffuse>0.50 0.40 0.30 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="perimeter_fence_south">
+      <static>true</static>
+      <pose>12.0 -11.5 0.75 0 0 0</pose>
+      <link name="link">
+        <collision name="col"><geometry><box><size>28.0 0.3 1.5</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>28.0 0.3 1.5</size></box></geometry>
+          <material><ambient>0.45 0.35 0.25 1.0</ambient><diffuse>0.50 0.40 0.30 1.0</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

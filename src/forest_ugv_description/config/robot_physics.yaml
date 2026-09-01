@@ -1,0 +1,167 @@
+# ==============================================================================
+# MARBLE HUSKY SENSOR CONFIG 1 - RIGID BODY PHYSICS & SENSOR SPECIFICATIONS
+# Real-World Physical SI Units (kg, m, s, N, N*m, rad/s)
+# ==============================================================================
+
+robot:
+  model_name: "MARBLE_HUSKY_SENSOR_CONFIG_1"
+  base_platform: "Clearpath Husky A200"
+  drive_type: "Skid-Steering 4-Wheel Drive (4WD)"
+  
+  chassis:
+    total_mass_kg: 46.064
+    center_of_mass_offset_m: [-0.000543, -0.084945, 0.062329]
+    dimensions_m:
+      length: 0.9874
+      width: 0.5709
+      height: 0.3950
+    wheelbase_m: 0.5120
+    track_width_m: 0.5709
+    ground_clearance_m: 0.1300
+    
+    inertia_tensor_kg_m2:
+      ixx: 0.615397
+      iyy: 1.753880
+      izz: 2.036410
+      ixy: -0.0240585
+      ixz: -0.1207490
+      iyz: -0.0028322
+
+  powertrain:
+    max_linear_velocity_mps: 1.50
+    min_linear_velocity_mps: -1.50
+    max_angular_velocity_radps: 2.00
+    min_angular_velocity_radps: -2.00
+    max_linear_acceleration_mps2: 2.50
+    max_angular_acceleration_radps2: 3.20
+    motor_torque_per_wheel_nm: 40.0
+    nominal_voltage_v: 24.0
+    battery_capacity_ah: 20.0
+
+  wheels:
+    count: 4
+    radius_m: 0.1651
+    width_m: 0.1143
+    mass_per_wheel_kg: 2.637
+    tire_type: "Lug-tread heavy-duty all-terrain pneumatic tire"
+    inertia_per_wheel_kg_m2:
+      ixx: 0.02467
+      iyy: 0.04411
+      izz: 0.02467
+
+# ==============================================================================
+# TERRAIN & SURFACE MATERIAL PHYSICS MATRIX
+# Static Friction (mu_s), Dynamic Friction (mu_d), Restitution (e), Rolling Resistance (C_rr)
+# ==============================================================================
+materials:
+  asphalt:
+    static_friction: 0.90
+    dynamic_friction: 0.80
+    restitution: 0.15
+    rolling_resistance_coeff: 0.015
+    traversability_cost: 0
+
+  concrete:
+    static_friction: 0.85
+    dynamic_friction: 0.75
+    restitution: 0.20
+    rolling_resistance_coeff: 0.012
+    traversability_cost: 0
+
+  gravel:
+    static_friction: 0.60
+    dynamic_friction: 0.50
+    restitution: 0.10
+    rolling_resistance_coeff: 0.040
+    traversability_cost: 20
+
+  grass:
+    static_friction: 0.55
+    dynamic_friction: 0.45
+    restitution: 0.08
+    rolling_resistance_coeff: 0.050
+    traversability_cost: 25
+
+  soil:
+    static_friction: 0.50
+    dynamic_friction: 0.40
+    restitution: 0.05
+    rolling_resistance_coeff: 0.060
+    traversability_cost: 30
+
+  mud:
+    static_friction: 0.35
+    dynamic_friction: 0.25
+    restitution: 0.02
+    rolling_resistance_coeff: 0.090
+    traversability_cost: 70
+
+  metal:
+    static_friction: 0.65
+    dynamic_friction: 0.55
+    restitution: 0.25
+    rolling_resistance_coeff: 0.008
+    traversability_cost: 10
+
+  plastic_barrier:
+    static_friction: 0.45
+    dynamic_friction: 0.35
+    restitution: 0.30
+    rolling_resistance_coeff: 0.020
+    traversability_cost: 254
+
+# ==============================================================================
+# SENSORS & REALISTIC NOISE CHARACTERISTICS
+# ==============================================================================
+sensors:
+  realsense_d435i:
+    rgb_resolution: [1920, 1080]
+    rgb_processing_resolution: [640, 480]
+    depth_resolution: [640, 480]
+    fov_horizontal_rad: 1.5184  # 87 degrees
+    fov_vertical_rad: 1.0123    # 58 degrees
+    framerate_hz: 30
+    depth_range_m: [0.15, 10.0]
+    noise:
+      gaussian_std_dev: 0.005
+      exposure_drift_pct: 0.02
+
+  raspberry_pi_camera_v2:
+    sensor: "Sony IMX219"
+    native_resolution: [1920, 1080]
+    autonomy_resolution: [640, 480]
+    framerate_hz: 30
+    fov_horizontal_rad: 1.0821  # 62.2 degrees
+    fov_vertical_rad: 0.8517    # 48.8 degrees
+    color_format: "R8G8B8"
+
+  ouster_os1_64:
+    channels: 64
+    range_m: [0.5, 120.0]
+    horizontal_fov_deg: 360.0
+    vertical_fov_deg: 45.0  # +22.5 to -22.5
+    angular_resolution_deg: 0.35
+    scan_rate_hz: 10
+    range_accuracy_m: 0.015
+
+  rplidar_s1:
+    range_m: [0.10, 40.0]
+    horizontal_fov_deg: 360.0
+    scan_rate_hz: 15
+    range_accuracy_m: 0.030
+
+  imu:
+    frequency_hz: 100
+    gyroscope:
+      noise_density_rad_s_sqrthz: 0.0002
+      random_walk_rad_s2_sqrthz: 0.00003
+      bias_stability_rad_s: 0.00005
+    accelerometer:
+      noise_density_m_s2_sqrthz: 0.002
+      random_walk_m_s3_sqrthz: 0.0003
+      bias_stability_m_s2: 0.0005
+
+  wheel_encoders:
+    pulses_per_revolution: 1024
+    measurement_noise_std_dev: 0.012
+    wheel_slip_coefficient: 0.035

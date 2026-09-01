@@ -1,0 +1,29 @@
+# ROS 2 Build directories
+build/
+install/
+log/
+
+# Python cache & virtualenvs
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+venv/
+*.egg-info/
+
+# IDE and temporary files
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Temporary artifacts
+/tmp/
+amr4_perception/*.jpg
+!amr4_perception/latest_robot_view.jpg
+
+# Large external generator tool repos
+gazebo_terrain_generator/

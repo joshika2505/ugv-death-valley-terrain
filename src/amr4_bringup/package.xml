@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>amr4_bringup</name>
+  <version>1.0.0</version>
+  <description>Master Bringup package for AMR-4 Autonomous Simulation in Death Valley</description>
+  <maintainer email="joshika@todo.todo">joshika</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>amr4_gazebo</exec_depend>
+  <exec_depend>amr4_navigation</exec_depend>
+  <exec_depend>amr4_autonomy</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

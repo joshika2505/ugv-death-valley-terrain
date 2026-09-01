@@ -1,0 +1,72 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <world name="real_satellite_terrain_world">
+    <!-- Physics Profile -->
+    <physics name="1ms" type="ode">
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>250</real_time_update_rate>
+      <ode>
+        <solver>
+          <type>quick</type>
+          <iters>60</iters>
+          <sor>1.3</sor>
+        </solver>
+      </ode>
+    </physics>
+
+    <!-- Core Simulation Plugins -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics" />
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands" />
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster" />
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu" />
+    <plugin filename="gz-sim-navsat-system" name="gz::sim::systems::NavSat" />
+
+    <!-- GUI Orbit & Follow Camera -->
+    <gui fullscreen="0">
+      <camera name="user_camera">
+        <pose>-6.0 -6.0 6.0 0 0.45 0.75</pose>
+        <view_controller>orbit</view_controller>
+        <track>
+          <target>forest_ugv</target>
+          <min_dist>3.0</min_dist>
+          <max_dist>15.0</max_dist>
+        </track>
+      </camera>
+    </gui>
+
+    <!-- PBR Natural Atmospheric Sunlight & Sky -->
+    <scene>
+      <ambient>0.60 0.65 0.70 1.0</ambient>
+      <background>0.55 0.75 0.92 1.0</background>
+      <shadows>true</shadows>
+      <grid>false</grid>
+    </scene>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>50 50 120 0 0.75 0.55</pose>
+      <diffuse>0.98 0.95 0.88 1.0</diffuse>
+      <specular>0.35 0.35 0.35 1.0</specular>
+      <direction>-0.4 0.2 -0.9</direction>
+    </light>
+
+    <!-- Real-World Satellite Terrain with Stitched Aerial Imagery & 3D OSM Buildings -->
+    <include>
+      <uri>model://real_satellite_terrain</uri>
+      <name>real_terrain</name>
+      <pose>0.0 0.0 0.0 0 0 0</pose>
+    </include>
+
+    <!-- EXACT ROBOT MODEL: MARBLE_HUSKY_SENSOR_CONFIG_1 -->
+    <include>
+      <uri>model://marble_husky_sensor_config_1</uri>
+      <name>forest_ugv</name>
+      <pose>0.0 0.0 0.50 0 0 0</pose>
+    </include>
+
+  </world>
+</sdf>

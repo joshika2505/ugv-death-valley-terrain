@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<robot name="amr4" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Base Footprint -->
+  <link name="base_footprint" />
+
+  <!-- Base Link (AMR-4 Chassis) -->
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0 0 0.05" rpy="0 0 0" />
+      <mass value="45.0" />
+      <inertia ixx="0.65" ixy="0.0" ixz="0.0" iyy="1.80" iyz="0.0" izz="2.10" />
+    </inertial>
+    <collision>
+      <origin xyz="0 0 0.12" rpy="0 0 0" />
+      <geometry>
+        <box size="0.92 0.55 0.22" />
+      </geometry>
+    </collision>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://amr4_description/models/amr4/meshes/base_link.dae" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://amr4_description/models/amr4/meshes/top_chassis.dae" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://amr4_description/models/amr4/meshes/top_plate.dae" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://amr4_description/models/amr4/meshes/bumper.dae" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://amr4_description/models/amr4/meshes/user_rail.dae" />
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://amr4_description/models/amr4/meshes/jpl04_arch_nosensor.stl" />
+      </geometry>
+    </visual>
+  </link>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint" />
+    <child link="base_link" />
+    <origin xyz="0 0 0.165" rpy="0 0 0" />
+  </joint>
+
+  <!-- ==================== 4 WHEELS ==================== -->
+  <xacro:macro name="amr4_wheel" params="prefix x_offset y_offset">
+    <link name="${prefix}_wheel_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <mass value="2.8" />
+        <inertia ixx="0.025" ixy="0" ixz="0" iyy="0.045" iyz="0" izz="0.025" />
+      </inertial>
+      <collision>
+        <origin xyz="0 0 0" rpy="1.570796 0 0" />
+        <geometry>
+          <cylinder radius="0.165" length="0.115" />
+        </geometry>
+      </collision>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://amr4_description/models/amr4/meshes/wheel.dae" />
+        </geometry>
+      </visual>
+    </link>
+
+    <joint name="${prefix}_wheel_joint" type="continuous">
+      <parent link="base_link" />
+      <child link="${prefix}_wheel_link" />
+      <origin xyz="${x_offset} ${y_offset} 0.033" rpy="0 0 0" />
+      <axis xyz="0 1 0" />
+    </joint>
+  </xacro:macro>
+
+  <xacro:amr4_wheel prefix="front_left"  x_offset="0.256"  y_offset="0.285" />
+  <xacro:amr4_wheel prefix="front_right" x_offset="0.256"  y_offset="-0.285" />
+  <xacro:amr4_wheel prefix="rear_left"   x_offset="-0.256" y_offset="0.285" />
+  <xacro:amr4_wheel prefix="rear_right"  x_offset="-0.256" y_offset="-0.285" />
+
+  <!-- Include Sensors & Gazebo Control -->
+  <xacro:include filename="amr4_sensors.xacro" />
+  <xacro:include filename="amr4_gazebo.xacro" />
+
+</robot>

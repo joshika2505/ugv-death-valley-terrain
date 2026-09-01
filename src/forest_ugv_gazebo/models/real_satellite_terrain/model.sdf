@@ -1,0 +1,69 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <model name="real_satellite_terrain">
+    <static>true</static>
+    <pose>0 0 0 0 0 0</pose>
+
+    <!-- 1. Real-World Heightmap Ground Terrain with High-Res Satellite Texture -->
+    <link name="ground">
+      <collision name="collision">
+        <pose>356.84 -174.97 -15.0 0 0 0</pose>
+        <geometry>
+          <heightmap>
+            <uri>model://real_satellite_terrain/mesh/height_map.png</uri>
+            <size>2318.81 2124.58 26.6</size>
+            <pos>0 0 0</pos>
+          </heightmap>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>0.90</mu>
+              <mu2>0.80</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name="ground_visual">
+        <geometry>
+          <heightmap>
+            <use_terrain_paging>false</use_terrain_paging>
+            <texture>
+              <diffuse>model://real_satellite_terrain/mesh/aerial.png</diffuse>
+              <normal>model://real_satellite_terrain/mesh/normal_map.png</normal>
+              <size>2318.81</size>
+            </texture>
+            <uri>model://real_satellite_terrain/mesh/height_map.png</uri>
+            <size>2318.81 2124.58 26.6</size>
+            <pos>356.84 -174.97 -15.0</pos>
+          </heightmap>
+        </geometry>
+      </visual>
+    </link>
+
+    <!-- 2. Real-World 3D Extruded OSM Buildings -->
+    <link name="buildings">
+      <pose>356.84 -174.97 0 0 0 0</pose>
+      <visual name="buildings_visual">
+        <geometry>
+          <mesh>
+            <uri>model://real_satellite_terrain/mesh/buildings.dae</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.8 0.8 0.8 1.0</ambient>
+          <diffuse>0.85 0.85 0.85 1.0</diffuse>
+        </material>
+      </visual>
+      <collision name="buildings_collision">
+        <geometry>
+          <mesh>
+            <uri>model://real_satellite_terrain/mesh/buildings.dae</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+      </collision>
+    </link>
+  </model>
+</sdf>

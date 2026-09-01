@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+<robot name="sih_ugv" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Arguments -->
+  <xacro:arg name="sim" default="true" />
+
+  <!-- Colors and Materials -->
+  <material name="chassis_dark">
+    <color rgba="0.15 0.15 0.18 1.0" />
+  </material>
+  <material name="sih_orange">
+    <color rgba="0.95 0.45 0.05 1.0" />
+  </material>
+  <material name="wheel_rubber">
+    <color rgba="0.08 0.08 0.08 1.0" />
+  </material>
+  <material name="sensor_blue">
+    <color rgba="0.1 0.5 0.8 1.0" />
+  </material>
+
+  <!-- Base Footprint -->
+  <link name="base_footprint" />
+
+  <!-- Base Link (UGV Chassis) -->
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.08" rpy="0 0 0" />
+      <mass value="12.0" />
+      <inertia ixx="0.15" ixy="0.0" ixz="0.0" iyy="0.25" iyz="0.0" izz="0.30" />
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 0.08" rpy="0 0 0" />
+      <geometry>
+        <box size="0.55 0.38 0.16" />
+      </geometry>
+      <material name="sih_orange" />
+    </visual>
+    <visual>
+      <origin xyz="0.0 0.0 0.17" rpy="0 0 0" />
+      <geometry>
+        <box size="0.45 0.30 0.04" />
+      </geometry>
+      <material name="chassis_dark" />
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.08" rpy="0 0 0" />
+      <geometry>
+        <box size="0.55 0.38 0.16" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="base_footprint_to_base_link" type="fixed">
+    <parent link="base_footprint" />
+    <child link="base_link" />
+    <origin xyz="0 0 0.06" rpy="0 0 0" />
+  </joint>
+
+  <!-- Wheel Macro -->
+  <xacro:macro name="ugv_wheel" params="prefix x_offset y_offset">
+    <link name="${prefix}_wheel_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <mass value="2.0" />
+        <inertia ixx="0.008" ixy="0.0" ixz="0.0" iyy="0.008" iyz="0.0" izz="0.012" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="1.570796 0 0" />
+        <geometry>
+          <cylinder radius="0.10" length="0.07" />
+        </geometry>
+        <material name="wheel_rubber" />
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="1.570796 0 0" />
+        <geometry>
+          <cylinder radius="0.10" length="0.07" />
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="${prefix}_wheel_joint" type="continuous">
+      <parent link="base_link" />
+      <child link="${prefix}_wheel_link" />
+      <origin xyz="${x_offset} ${y_offset} 0.04" rpy="0 0 0" />
+      <axis xyz="0 1 0" />
+    </joint>
+
+    <gazebo reference="${prefix}_wheel_link">
+      <mu1>1.2</mu1>
+      <mu2>1.2</mu2>
+      <kp>1000000.0</kp>
+      <kd>100.0</kd>
+      <material>Gazebo/DarkGrey</material>
+    </gazebo>
+  </xacro:macro>
+
+  <!-- 4 Wheels -->
+  <xacro:ugv_wheel prefix="front_left"  x_offset="0.18"  y_offset="0.22" />
+  <xacro:ugv_wheel prefix="rear_left"   x_offset="-0.18" y_offset="0.22" />
+  <xacro:ugv_wheel prefix="front_right" x_offset="0.18"  y_offset="-0.22" />
+  <xacro:ugv_wheel prefix="rear_right"  x_offset="-0.18" y_offset="-0.22" />
+
+  <!-- Include Sensors & Gazebo Control -->
+  <xacro:include filename="$(find sih_ugv_description)/urdf/sensors.xacro" />
+  <xacro:include filename="$(find sih_ugv_description)/urdf/gazebo_control.xacro" />
+
+</robot>

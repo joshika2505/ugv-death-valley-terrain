@@ -1,0 +1,8 @@
+newmtl death_valley_mat
+Ka 0.5 0.38 0.26
+Kd 0.65 0.50 0.38
+Ks 0.05 0.05 0.05
+Ns 10.0
+d 1.0
+illum 2
+map_Kd death_valley_diffuse_2k.jpg

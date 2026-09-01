@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>amr4_gazebo</name>
+  <version>1.0.0</version>
+  <description>Gazebo simulation launcher and bridge for AMR-4 in Death Valley</description>
+  <maintainer email="joshika@todo.todo">joshika</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>ros_gz_sim</exec_depend>
+  <exec_depend>ros_gz_bridge</exec_depend>
+  <exec_depend>ros_gz_image</exec_depend>
+  <exec_depend>amr4_description</exec_depend>
+  <exec_depend>death_valley_world</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

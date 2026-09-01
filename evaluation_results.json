@@ -1,0 +1,17 @@
+{
+  "scenario": "locality_hospital_mission",
+  "gps_enabled": false,
+  "mission_success": false,
+  "time_to_goal_s": 90.27,
+  "total_distance_m": 37.69,
+  "path_efficiency": 0.572,
+  "collision_count": 0,
+  "min_obstacle_distance_m": 2.4,
+  "absolute_trajectory_error_rmse_m": 0.14,
+  "relative_pose_error_m": 0.03,
+  "position_drift_pct": 0.72,
+  "perception_fps": 58.4,
+  "perception_accuracy_pct": 98.2,
+  "false_positive_rate_pct": 1.4,
+  "false_negative_rate_pct": 0.8
+}

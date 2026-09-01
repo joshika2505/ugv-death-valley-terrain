@@ -1,0 +1,22 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <model name="desert_rock">
+    <static>true</static>
+    <link name="link">
+      <collision name="collision">
+        <geometry>
+          <box><size>1.2 1.4 1.1</size></box>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <box><size>1.2 1.4 1.1</size></box>
+        </geometry>
+        <material>
+          <ambient>0.6 0.45 0.35 1</ambient>
+          <diffuse>0.7 0.52 0.4 1</diffuse>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>
