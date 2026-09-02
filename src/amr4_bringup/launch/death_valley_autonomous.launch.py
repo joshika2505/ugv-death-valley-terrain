@@ -15,14 +15,14 @@ def generate_launch_description():
 
     start_x = LaunchConfiguration('start_x', default='0.0')
     start_y = LaunchConfiguration('start_y', default='0.0')
-    start_z = LaunchConfiguration('start_z', default='3.1')
+    start_z = LaunchConfiguration('start_z', default='2.70')
     start_yaw = LaunchConfiguration('start_yaw', default='0.6')
-    goal_x = LaunchConfiguration('goal_x', default='20.0')
-    goal_y = LaunchConfiguration('goal_y', default='20.0')
+    goal_x = LaunchConfiguration('goal_x', default='15.0')
+    goal_y = LaunchConfiguration('goal_y', default='15.0')
     goal_yaw = LaunchConfiguration('goal_yaw', default='0.785')
     camera_gui = LaunchConfiguration('camera_gui', default='false')
     rviz = LaunchConfiguration('rviz', default='true')
-    auto_nav = LaunchConfiguration('auto_nav', default='true')
+    auto_nav = LaunchConfiguration('auto_nav', default='false')
 
     rviz_config = os.path.join(pkg_amr4_bringup, 'rviz', 'amr4_perception.rviz')
 

@@ -8,14 +8,20 @@ class ClockMonotonicFilter(Node):
         super().__init__('clock_monotonic_filter')
         self.sub = self.create_subscription(Clock, '/gz/clock', self.clock_cb, 50)
         self.pub = self.create_publisher(Clock, '/clock', 50)
-        self.last_sec = 0
-        self.last_nanosec = 0
-        self.get_logger().info('Clock Monotonic Filter Active: Preventing time jitter.')
+        self.last_total_ns = 0
+        self.get_logger().info('Clock Monotonic Filter Active: Zero time-jump guaranteed.')
 
     def clock_cb(self, msg):
-        if msg.clock.sec > self.last_sec or (msg.clock.sec == self.last_sec and msg.clock.nanosec >= self.last_nanosec):
-            self.last_sec = msg.clock.sec
-            self.last_nanosec = msg.clock.nanosec
+        current_ns = msg.clock.sec * 1_000_000_000 + msg.clock.nanosec
+        
+        # Handle simulator reset
+        if current_ns < self.last_total_ns - 2_000_000_000:
+            self.last_total_ns = current_ns
+            self.pub.publish(msg)
+            return
+
+        if current_ns >= self.last_total_ns:
+            self.last_total_ns = current_ns
             self.pub.publish(msg)
 
 def main(args=None):
