@@ -4,6 +4,12 @@ project(amr4_autonomy)
 find_package(ament_cmake REQUIRED)
 
 install(PROGRAMS
+  amr4_autonomy/navigation_manager_node.py
+  DESTINATION lib/amr4_autonomy
+  RENAME navigation_manager_node
+)
+
+install(PROGRAMS
   amr4_autonomy/autonomous_goal_node.py
   DESTINATION lib/amr4_autonomy
   RENAME autonomous_goal_node
@@ -27,8 +33,15 @@ install(PROGRAMS
   RENAME clock_filter
 )
 
+install(PROGRAMS
+  amr4_autonomy/terrain_analyzer.py
+  amr4_autonomy/terrain_path_planner.py
+  amr4_autonomy/physics_controller.py
+  DESTINATION lib/amr4_autonomy
+)
+
 install(
-  DIRECTORY launch config
+  DIRECTORY launch config web
   DESTINATION share/amr4_autonomy
 )
 

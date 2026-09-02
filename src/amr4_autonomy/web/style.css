@@ -1,0 +1,307 @@
+
+:root {
+    --bg-dark: #0d1117;
+    --card-bg: #161b22;
+    --border-color: #30363d;
+    --accent-blue: #00d2ff;
+    --accent-green: #00ff88;
+    --accent-red: #ff3366;
+    --accent-yellow: #ffbb00;
+    --text-main: #e6edf3;
+    --text-muted: #8b949e;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    overflow-x: hidden;
+}
+
+.app-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 15px;
+}
+
+.hud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin-bottom: 15px;
+}
+
+.hud-header h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 1px;
+}
+
+.hud-header h1 span {
+    color: var(--accent-blue);
+}
+
+.badge {
+    background: rgba(0, 210, 255, 0.15);
+    color: var(--accent-blue);
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    display: inline-block;
+}
+
+.system-indicators {
+    display: flex;
+    gap: 20px;
+}
+
+.indicator {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.indicator strong {
+    color: var(--text-main);
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.dot.online { background-color: var(--accent-green); box-shadow: 0 0 6px var(--accent-green); }
+.dot.active { background-color: var(--accent-blue); box-shadow: 0 0 6px var(--accent-blue); }
+.dot.green { background-color: var(--accent-green); }
+.dot.red { background-color: var(--accent-red); }
+
+.grid-workspace {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 15px;
+}
+
+.panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.panel-header {
+    margin-bottom: 12px;
+}
+
+.panel-header h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    color: var(--accent-blue);
+}
+
+.panel-header .subtext {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.canvas-wrapper {
+    position: relative;
+    background: #080c10;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    cursor: crosshair;
+}
+
+.map-overlay-info {
+    position: absolute;
+    bottom: 8px;
+    left: 10px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: rgba(0,0,0,0.6);
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: flex;
+    gap: 15px;
+}
+
+.control-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.btn {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: #21262d;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    background: #30363d;
+    border-color: var(--accent-blue);
+}
+
+.btn-set-a:hover { border-color: var(--accent-green); color: var(--accent-green); }
+.btn-set-b:hover { border-color: var(--accent-red); color: var(--accent-red); }
+.btn-start { background: rgba(0, 255, 136, 0.15); border-color: var(--accent-green); color: var(--accent-green); }
+.btn-start:hover { background: var(--accent-green); color: #000; }
+.btn-stop { background: rgba(255, 51, 102, 0.15); border-color: var(--accent-red); color: var(--accent-red); }
+.btn-stop:hover { background: var(--accent-red); color: #fff; }
+
+.camera-box {
+    position: relative;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+    background: #000;
+    margin-bottom: 12px;
+    height: 190px;
+}
+
+.camera-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.camera-hud-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
+    background: rgba(0,0,0,0.7);
+    color: var(--accent-blue);
+    padding: 3px 6px;
+    border-radius: 3px;
+    border-left: 2px solid var(--accent-blue);
+}
+
+.telemetry-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0d1117;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px 15px;
+    margin-bottom: 12px;
+}
+
+.point-col {
+    flex: 1;
+}
+
+.point-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.badge-tag {
+    font-size: 0.65rem;
+    padding: 1px 4px;
+    border-radius: 3px;
+    margin-right: 4px;
+}
+
+.badge-tag.green { background: rgba(0, 255, 136, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+.badge-tag.red { background: rgba(255, 51, 102, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+
+.coord-line {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.coord-line span {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.point-divider {
+    font-size: 1.2rem;
+    color: var(--accent-blue);
+    padding: 0 10px;
+}
+
+.dynamics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.metric-card {
+    background: #0d1117;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px 12px;
+}
+
+.metric-card .label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.metric-card .value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.metric-card .value.highlight {
+    color: var(--accent-blue);
+}
+
+.arrival-banner {
+    background: rgba(0, 255, 136, 0.2);
+    border: 1px solid var(--accent-green);
+    color: var(--accent-green);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.95rem;
+    text-align: center;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 10px;
+    animation: pulse 1.5s infinite;
+}
+
+.hidden { display: none; }
+
+@keyframes pulse {
+    0% { opacity: 0.8; }
+    50% { opacity: 1; }
+    100% { opacity: 0.8; }
+}

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMR-4 Autonomous Navigation | Death Valley</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navigation Header -->
+        <header class="hud-header">
+            <div class="logo-area">
+                <span class="badge">AUTONOMY CORE v2.4</span>
+                <h1>AMR-4 <span>DEATH VALLEY</span> MISSION CONTROL</h1>
+            </div>
+            <div class="system-indicators">
+                <div class="indicator"><span class="dot online"></span> PHYSICS ENGINE: <strong id="physics-status">DART 60Hz</strong></div>
+                <div class="indicator"><span class="dot online"></span> SLAM TOOLBOX: <strong id="slam-status">ACTIVE</strong></div>
+                <div class="indicator"><span class="dot active"></span> MISSION: <strong id="mission-badge">READY</strong></div>
+            </div>
+        </header>
+
+        <!-- Main Workspace Grid -->
+        <div class="grid-workspace">
+            <!-- Left Panel: Interactive Terrain Map & Waypoint Selector -->
+            <div class="panel terrain-panel">
+                <div class="panel-header">
+                    <h2>3D TERRAIN CONTOUR MAP & POINT SELECTOR</h2>
+                    <span class="subtext">Click on map to place <strong>POINT A</strong> (Start) and <strong>POINT B</strong> (Destination)</span>
+                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="terrainCanvas" width="650" height="520"></canvas>
+                    <div class="map-overlay-info">
+                        <span>Grid: 150m x 150m</span>
+                        <span>Elevation: 0.0m - 18.5m</span>
+                    </div>
+                </div>
+                <!-- Control Button Bar -->
+                <div class="control-actions">
+                    <button id="btnSetA" class="btn btn-set-a"><span class="dot green"></span> SET A (START)</button>
+                    <button id="btnSetB" class="btn btn-set-b"><span class="dot red"></span> SET B (DEST)</button>
+                    <button id="btnPlan" class="btn btn-plan">⚙️ PLAN PATH</button>
+                    <button id="btnStart" class="btn btn-start">▶ START NAVIGATION</button>
+                    <button id="btnStop" class="btn btn-stop">⏹ STOP</button>
+                    <button id="btnReset" class="btn btn-reset">🔄 RESET</button>
+                </div>
+            </div>
+
+            <!-- Right Panel: Mission Telemetry & Robot POV Camera -->
+            <div class="panel telemetry-panel">
+                <div class="panel-header">
+                    <h2>MISSION TELEMETRY & ROBOT POV</h2>
+                </div>
+
+                <!-- Live Camera Feed -->
+                <div class="camera-box">
+                    <img id="robotCamera" src="/api/camera_frame" alt="Robot POV Stream" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='180'><rect fill='%23111' width='320' height='180'/><text fill='%23666' x='50%' y='50%' text-anchor='middle'>CAMERA STANDBY</text></svg>'">
+                    <div class="camera-hud-badge">AMR-4 FIRST-PERSON POV</div>
+                </div>
+
+                <!-- Point A & Point B Coordinates Card -->
+                <div class="telemetry-card">
+                    <div class="point-col point-a-box">
+                        <div class="point-title"><span class="badge-tag green">POINT A</span> START</div>
+                        <div class="coord-line">X: <span id="val-ax">0.00</span> m</div>
+                        <div class="coord-line">Y: <span id="val-ay">0.00</span> m</div>
+                        <div class="coord-line">Z: <span id="val-az">2.64</span> m</div>
+                    </div>
+                    <div class="point-divider">➔</div>
+                    <div class="point-col point-b-box">
+                        <div class="point-title"><span class="badge-tag red">POINT B</span> DESTINATION</div>
+                        <div class="coord-line">X: <span id="val-bx">15.00</span> m</div>
+                        <div class="coord-line">Y: <span id="val-by">15.00</span> m</div>
+                        <div class="coord-line">Z: <span id="val-bz">0.00</span> m</div>
+                    </div>
+                </div>
+
+                <!-- Real-Time Dynamics Grid -->
+                <div class="dynamics-grid">
+                    <div class="metric-card">
+                        <span class="label">DISTANCE A ➔ B</span>
+                        <span class="value highlight" id="val-dist-ab">21.21 m</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="label">REMAINING DIST</span>
+                        <span class="value highlight" id="val-dist-rem">21.21 m</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="label">ROBOT SPEED</span>
+                        <span class="value" id="val-speed">0.00 m/s</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="label">TERRAIN CLASS</span>
+                        <span class="value" id="val-terrain">Safe</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="label">PITCH / ROLL</span>
+                        <span class="value" id="val-pitch-roll">0.0° / 0.0°</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="label">LIDAR CLEARANCE</span>
+                        <span class="value" id="val-clearance">> 5.0 m</span>
+                    </div>
+                </div>
+
+                <!-- Arrival Banner -->
+                <div id="arrival-banner" class="arrival-banner hidden">
+                    🎉 DESTINATION B REACHED SUCCESSFULLY!
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

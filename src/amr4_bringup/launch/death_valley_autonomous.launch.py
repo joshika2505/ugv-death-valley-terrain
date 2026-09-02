@@ -70,16 +70,12 @@ def generate_launch_description():
 
     autonomy_node = Node(
         package='amr4_autonomy',
-        executable='autonomous_goal_node',
-        name='autonomous_goal_node',
+        executable='navigation_manager_node',
+        name='navigation_manager_node',
         parameters=[{
-            'start_x': start_x,
-            'start_y': start_y,
-            'start_yaw': start_yaw,
-            'goal_x': goal_x,
-            'goal_y': goal_y,
-            'goal_yaw': goal_yaw,
             'auto_start': auto_nav,
+            'web_port': 8080,
+            'mesh_path': '/home/ubuntu/sih_ws/src/death_valley_world/meshes/death_valley_visual.obj',
             'use_sim_time': True
         }],
         output='screen'
