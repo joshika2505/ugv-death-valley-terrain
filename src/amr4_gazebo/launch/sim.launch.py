@@ -76,6 +76,13 @@ def generate_launch_description():
         output='screen'
     )
 
+    clock_filter_node = Node(
+        package='amr4_autonomy',
+        executable='clock_filter',
+        name='clock_monotonic_filter',
+        output='screen'
+    )
+
     odom_tf_node = Node(
         package='amr4_autonomy',
         executable='odom_tf_broadcaster',
@@ -94,5 +101,6 @@ def generate_launch_description():
         robot_desc_launch,
         spawn_robot,
         ros_gz_bridge,
+        clock_filter_node,
         odom_tf_node
     ])
