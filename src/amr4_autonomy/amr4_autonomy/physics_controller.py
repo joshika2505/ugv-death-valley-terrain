@@ -27,10 +27,10 @@ class PhysicsBasedPathTracker:
         self.last_cmd_v = 0.0
         self.last_time = None
 
-        # Stability & Rollover Thresholds
-        self.max_safe_pitch = 28.0     # degrees (pre-tip threshold)
-        self.max_safe_roll = 24.0      # degrees (pre-tip threshold)
-        self.rollover_threshold = 55.0 # degrees (fully flipped)
+        # Stability & Rollover Prevention Thresholds
+        self.max_safe_pitch = 20.0     # degrees (difficult terrain threshold)
+        self.max_safe_roll = 16.0      # degrees (fall hazard threshold)
+        self.rollover_threshold = 45.0 # degrees (rollover recovery)
         self.recovery_state = 'NORMAL' # 'NORMAL', 'STABILIZING', 'FLIPPED_RECOVERY'
         self.recovery_timer = 0.0
 

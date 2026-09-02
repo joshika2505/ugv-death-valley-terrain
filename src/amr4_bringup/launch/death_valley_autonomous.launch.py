@@ -68,6 +68,8 @@ def generate_launch_description():
         output='screen'
     )
 
+    mesh_path = os.path.join(get_package_share_directory('death_valley_world'), 'models', 'death_valley_terrain', 'meshes', 'death_valley_visual.obj')
+
     autonomy_node = Node(
         package='amr4_autonomy',
         executable='navigation_manager_node',
@@ -75,7 +77,7 @@ def generate_launch_description():
         parameters=[{
             'auto_start': auto_nav,
             'web_port': 8080,
-            'mesh_path': '/home/ubuntu/sih_ws/src/death_valley_world/meshes/death_valley_visual.obj',
+            'mesh_path': mesh_path,
             'use_sim_time': True
         }],
         output='screen'
@@ -94,7 +96,7 @@ def generate_launch_description():
         DeclareLaunchArgument('auto_nav', default_value='true', description='Auto-dispatch Point B goal'),
 
         gazebo_bringup,
+        TimerAction(period=2.0, actions=[autonomy_node]),
         TimerAction(period=3.0, actions=[nav_bringup]),
-        TimerAction(period=6.0, actions=[rviz_node, perception_node]),
-        TimerAction(period=10.0, actions=[autonomy_node])
+        TimerAction(period=5.0, actions=[rviz_node, perception_node])
     ])

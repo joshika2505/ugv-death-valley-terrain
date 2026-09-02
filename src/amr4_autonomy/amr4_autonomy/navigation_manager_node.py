@@ -597,6 +597,7 @@ class NavigationManagerNode(Node):
 
         def run_server():
             try:
+                ThreadingHTTPServer.allow_reuse_address = True
                 server = ThreadingHTTPServer(('0.0.0.0', self.web_port), WebRequestHandler)
                 server.serve_forever()
             except Exception as e:
