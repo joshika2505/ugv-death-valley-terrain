@@ -139,16 +139,25 @@ class NavigationManagerNode(Node):
             self.min_clearance = min(valid)
 
         # Dynamic Obstacle Handling & Replanning Trigger:
-        # If navigating and forward obstacle is within 1.2 meters
-        if self.path_status == 'Navigating' and self.min_clearance < 1.1:
-            self.get_logger().warn(f'[ObstacleDetector] Obstacle detected at {self.min_clearance:.2f}m! Halting and replanning...')
-            self.path_status = 'Replanning'
-            # Stop immediately
-            stop_cmd = Twist()
-            self.cmd_pub.publish(stop_cmd)
-            # Replan from current pose to Point B
-            self.trigger_plan_path(start_from_current=True)
-            self.path_status = 'Navigating'
+        # Check forward arc (+/- 45 deg) with threshold < 0.65m to prevent false chassis triggers
+        num_readings = len(msg.ranges)
+        if num_readings > 0:
+            center_idx = num_readings // 2
+            arc = int(num_readings * (45.0 / 360.0))
+            forward_ranges = [
+                msg.ranges[i] for i in range(max(0, center_idx - arc), min(num_readings, center_idx + arc))
+                if 0.55 < msg.ranges[i] < 0.70
+            ]
+            if self.path_status == 'Navigating' and len(forward_ranges) > 5:
+                now_t = time.time()
+                if not hasattr(self, 'last_replan_time') or (now_t - self.last_replan_time > 3.0):
+                    self.last_replan_time = now_t
+                    self.get_logger().warn(f'[ObstacleDetector] Obstacle detected directly ahead! Replanning...')
+                    self.path_status = 'Replanning'
+                    stop_cmd = Twist()
+                    self.cmd_pub.publish(stop_cmd)
+                    self.trigger_plan_path(start_from_current=True)
+                    self.path_status = 'Navigating'
 
     def camera_callback(self, msg):
         try:
@@ -169,7 +178,7 @@ class NavigationManagerNode(Node):
         elif self.selection_mode == 'SET_B' or not self.points_set['b']:
             self.set_point_b(x, y, z)
             self.selection_mode = 'NONE'
-            self.trigger_plan_path()
+            self.trigger_plan_path(start_from_current=True)
 
     def initialpose_callback(self, msg):
         p = msg.pose.pose.position
@@ -180,7 +189,7 @@ class NavigationManagerNode(Node):
         p = msg.pose.position
         z = self.terrain_analyzer.get_surface_elevation(p.x, p.y)
         self.set_point_b(p.x, p.y, z)
-        self.trigger_plan_path()
+        self.trigger_plan_path(start_from_current=True)
 
     def set_point_a(self, x, y, z=None):
         if z is None:
@@ -197,9 +206,9 @@ class NavigationManagerNode(Node):
         dist = math.hypot(self.point_b['x'] - self.point_a['x'], self.point_b['y'] - self.point_a['y'])
         self.get_logger().info(f'[PointSelector] Point B (Destination) set to: ({x:.2f}, {y:.2f}, {z:.2f}) | Dist: {dist:.2f}m')
 
-    def trigger_plan_path(self, start_from_current=False):
+    def trigger_plan_path(self, start_from_current=True):
         """Runs the 3D Terrain A* Path Planner."""
-        if not self.points_set['a'] or not self.points_set['b']:
+        if not self.points_set['b']:
             return
 
         self.path_status = 'Planning'
@@ -212,6 +221,8 @@ class NavigationManagerNode(Node):
         self.get_logger().info(f'[PathPlanner] Route ready with {len(self.planned_waypoints)} safe 3D contour waypoints.')
 
     def start_navigation(self):
+        if len(self.planned_waypoints) == 0:
+            self.trigger_plan_path(start_from_current=True)
         if len(self.planned_waypoints) > 0:
             self.path_status = 'Navigating'
             self.get_logger().info('[Navigation] Autonomous physics navigation started!')
