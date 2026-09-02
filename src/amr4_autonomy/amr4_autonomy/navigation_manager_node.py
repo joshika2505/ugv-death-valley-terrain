@@ -5,7 +5,8 @@ import json
 import math
 import time
 import threading
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
+from ament_index_python.packages import get_package_share_directory
 import numpy as np
 
 import rclpy
@@ -381,7 +382,10 @@ class NavigationManagerNode(Node):
     def start_web_server(self):
         """Runs asynchronous HTTP REST server for Web Navigation UI."""
         node_ref = self
-        web_dir = '/home/ubuntu/sih_ws/src/amr4_autonomy/web'
+        try:
+            web_dir = os.path.join(get_package_share_directory('amr4_autonomy'), 'web')
+        except Exception:
+            web_dir = '/home/ubuntu/sih_ws/src/amr4_autonomy/web'
         if not os.path.exists(web_dir):
             web_dir = '/home/joshika/Desktop/SIH/src/amr4_autonomy/web'
 
@@ -461,7 +465,7 @@ class NavigationManagerNode(Node):
 
         def run_server():
             try:
-                server = HTTPServer(('0.0.0.0', self.web_port), WebRequestHandler)
+                server = ThreadingHTTPServer(('0.0.0.0', self.web_port), WebRequestHandler)
                 server.serve_forever()
             except Exception as e:
                 self.get_logger().warn(f'Web server warning: {e}')

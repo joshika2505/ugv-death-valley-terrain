@@ -158,6 +158,28 @@ document.getElementById('btnSetB').onclick = () => {
     document.getElementById('btnSetB').style.borderColor = '#ff3366';
 };
 
+document.getElementById('btnApplyCoords').onclick = () => {
+    const ax = parseFloat(document.getElementById('input-ax').value);
+    const ay = parseFloat(document.getElementById('input-ay').value);
+    const bx = parseFloat(document.getElementById('input-bx').value);
+    const by = parseFloat(document.getElementById('input-by').value);
+
+    Promise.all([
+        fetch('/api/set_point_a', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({x: ax, y: ay})
+        }),
+        fetch('/api/set_point_b', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({x: bx, y: by})
+        })
+    ]).then(() => {
+        return fetch('/api/plan_path', {method: 'POST'});
+    }).then(() => fetchStatus());
+};
+
 document.getElementById('btnPlan').onclick = () => {
     fetch('/api/plan_path', {method: 'POST'}).then(() => fetchStatus());
 };
@@ -179,12 +201,20 @@ function fetchStatus() {
         .then(res => res.json())
         .then(data => {
             state = data;
-            document.getElementById('val-ax').innerText = data.start_a.x.toFixed(2);
-            document.getElementById('val-ay').innerText = data.start_a.y.toFixed(2);
+            if (document.activeElement !== document.getElementById('input-ax')) {
+                document.getElementById('input-ax').value = data.start_a.x.toFixed(2);
+            }
+            if (document.activeElement !== document.getElementById('input-ay')) {
+                document.getElementById('input-ay').value = data.start_a.y.toFixed(2);
+            }
             document.getElementById('val-az').innerText = data.start_a.z.toFixed(2);
 
-            document.getElementById('val-bx').innerText = data.destination_b.x.toFixed(2);
-            document.getElementById('val-by').innerText = data.destination_b.y.toFixed(2);
+            if (document.activeElement !== document.getElementById('input-bx')) {
+                document.getElementById('input-bx').value = data.destination_b.x.toFixed(2);
+            }
+            if (document.activeElement !== document.getElementById('input-by')) {
+                document.getElementById('input-by').value = data.destination_b.y.toFixed(2);
+            }
             document.getElementById('val-bz').innerText = data.destination_b.z.toFixed(2);
 
             document.getElementById('val-dist-ab').innerText = data.distance_ab.toFixed(2) + ' m';

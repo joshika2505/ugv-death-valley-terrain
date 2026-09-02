@@ -64,17 +64,20 @@
                 <div class="telemetry-card">
                     <div class="point-col point-a-box">
                         <div class="point-title"><span class="badge-tag green">POINT A</span> START</div>
-                        <div class="coord-line">X: <span id="val-ax">0.00</span> m</div>
-                        <div class="coord-line">Y: <span id="val-ay">0.00</span> m</div>
-                        <div class="coord-line">Z: <span id="val-az">2.64</span> m</div>
+                        <div class="coord-line">X: <input type="number" id="input-ax" value="0.0" step="0.5" class="coord-input"> m</div>
+                        <div class="coord-line">Y: <input type="number" id="input-ay" value="0.0" step="0.5" class="coord-input"> m</div>
+                        <div class="coord-line">Z: <span id="val-az">2.64</span> m (Elevation)</div>
                     </div>
                     <div class="point-divider">➔</div>
                     <div class="point-col point-b-box">
                         <div class="point-title"><span class="badge-tag red">POINT B</span> DESTINATION</div>
-                        <div class="coord-line">X: <span id="val-bx">15.00</span> m</div>
-                        <div class="coord-line">Y: <span id="val-by">15.00</span> m</div>
-                        <div class="coord-line">Z: <span id="val-bz">0.00</span> m</div>
+                        <div class="coord-line">X: <input type="number" id="input-bx" value="15.0" step="0.5" class="coord-input"> m</div>
+                        <div class="coord-line">Y: <input type="number" id="input-by" value="15.0" step="0.5" class="coord-input"> m</div>
+                        <div class="coord-line">Z: <span id="val-bz">0.00</span> m (Elevation)</div>
                     </div>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <button id="btnApplyCoords" class="btn" style="width: 100%; background: #1f2a38; border-color: var(--accent-blue); color: var(--accent-blue);">📍 APPLY TYPED COORDINATES (A ➔ B)</button>
                 </div>
 
                 <!-- Real-Time Dynamics Grid -->

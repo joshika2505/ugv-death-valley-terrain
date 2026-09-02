@@ -241,11 +241,26 @@ canvas {
 .coord-line {
     font-size: 0.85rem;
     color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 2px;
 }
 
-.coord-line span {
-    color: var(--text-main);
-    font-weight: 600;
+.coord-input {
+    width: 60px;
+    background: #080c10;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.9rem;
+    padding: 2px 4px;
+}
+
+.coord-input:focus {
+    border-color: var(--accent-blue);
+    outline: none;
 }
 
 .point-divider {
