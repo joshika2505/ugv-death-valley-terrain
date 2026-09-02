@@ -50,10 +50,12 @@ case "$MODE" in
         docker exec -it \
             --env="DISPLAY=$DISPLAY" \
             --env="QT_X11_NO_MITSHM=1" \
+            --env="FASTRTPS_DEFAULT_PROFILES_FILE=/home/ubuntu/sih_ws/src/src/amr4_bringup/config/fastdds_udp.xml" \
+            --env="RMW_FASTRTPS_USE_QOS_FROM_XML=1" \
             "$CONTAINER_NAME" bash -c "
                 source /opt/ros/jazzy/setup.bash && \
                 cd $WORKSPACE_DIR && \
-                colcon build --symlink-install --packages-select death_valley_world amr4_description amr4_gazebo amr4_navigation amr4_autonomy amr4_bringup && \
+                colcon build --symlink-install --packages-select death_valley_world amr4_description amr4_gazebo amr4_navigation amr4_autonomy amr4_bringup ugv_belt_drive && \
                 source $WORKSPACE_DIR/install/setup.bash && \
                 ros2 launch amr4_bringup death_valley_autonomous.launch.py start_x:=$START_X start_y:=$START_Y goal_x:=$GOAL_X goal_y:=$GOAL_Y"
         ;;

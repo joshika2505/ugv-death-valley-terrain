@@ -18,21 +18,29 @@ from sensor_msgs.msg import LaserScan, Image
 from visualization_msgs.msg import Marker, MarkerArray
 from cv_bridge import CvBridge
 
-# Import modular autonomy components
+# Import modular autonomy & perception components
 try:
     from amr4_autonomy.terrain_analyzer import DeathValleyTerrainAnalyzer
     from amr4_autonomy.terrain_path_planner import TerrainPathPlanner
     from amr4_autonomy.physics_controller import PhysicsBasedPathTracker
+    from amr4_autonomy.sih_perception.pipeline.pipeline import PerceptionPipeline
+    from amr4_autonomy.sih_perception.pipeline.ros2_bridge import ROS2MessageBridge
 except ImportError:
     from terrain_analyzer import DeathValleyTerrainAnalyzer
     from terrain_path_planner import TerrainPathPlanner
     from physics_controller import PhysicsBasedPathTracker
+    try:
+        from sih_perception.pipeline.pipeline import PerceptionPipeline
+        from sih_perception.pipeline.ros2_bridge import ROS2MessageBridge
+    except ImportError:
+        PerceptionPipeline = None
+        ROS2MessageBridge = None
 
 class NavigationManagerNode(Node):
     """
     Master Point A -> Point B Autonomous Physics-Based Navigation Coordinator for AMR-4.
     Integrates terrain raycasting, 3D A* planning, pure pursuit physics tracking,
-    dynamic obstacle replanning, RViz marker visualizers, and interactive Web UI server.
+    SIH 3D RGB-D traversability perception, RViz visualizers, and Web UI server.
     """
     def __init__(self):
         super().__init__('navigation_manager_node')
@@ -52,6 +60,11 @@ class NavigationManagerNode(Node):
         self.path_planner = TerrainPathPlanner(self.terrain_analyzer)
         self.path_tracker = PhysicsBasedPathTracker()
         self.bridge = CvBridge()
+        
+        # Initialize SIH Perception & 3D Traversability Pipeline
+        self.perception_pipeline = PerceptionPipeline() if PerceptionPipeline is not None else None
+        self.latest_depth_img = None
+        self.latest_perception_result = None
 
         # State Variables
         self.point_a = {'x': 0.0, 'y': 0.0, 'z': self.terrain_analyzer.get_surface_elevation(0.0, 0.0)}
@@ -76,6 +89,8 @@ class NavigationManagerNode(Node):
         self.path_pub = self.create_publisher(Path, '/planned_path', 10)
         self.marker_pub = self.create_publisher(MarkerArray, '/navigation_markers', 10)
         self.costmap_pub = self.create_publisher(OccupancyGrid, '/traversability_grid', 10)
+        self.perception_obs_pub = self.create_publisher(MarkerArray, '/perception/detected_obstacles', 10)
+        self.perception_grid_pub = self.create_publisher(OccupancyGrid, '/perception/traversability_grid', 10)
 
         # ROS 2 Subscriptions
         self.sub_odom = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
@@ -84,6 +99,7 @@ class NavigationManagerNode(Node):
         self.sub_init_pose = self.create_subscription(PoseWithCovarianceStamped, '/initialpose', self.initialpose_callback, 10)
         self.sub_goal_pose = self.create_subscription(PoseStamped, '/goal_pose', self.goalpose_callback, 10)
         self.sub_cam = self.create_subscription(Image, '/camera/image_raw', self.camera_callback, 10)
+        self.sub_depth = self.create_subscription(Image, '/camera/depth/image_raw', self.depth_camera_callback, 10)
 
         # Main Navigation Control Loop (20 Hz)
         self.nav_timer = self.create_timer(0.05, self.control_loop)
@@ -169,6 +185,12 @@ class NavigationManagerNode(Node):
                     self.trigger_plan_path(start_from_current=True)
                     self.path_status = 'Navigating'
 
+    def depth_camera_callback(self, msg):
+        try:
+            self.latest_depth_img = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
+        except Exception:
+            pass
+
     def camera_callback(self, msg):
         try:
             import cv2
@@ -182,6 +204,35 @@ class NavigationManagerNode(Node):
                     cv_img = cv2.cvtColor(cv_img, cv2.COLOR_GRAY2BGR)
 
             h, w, _ = cv_img.shape
+
+            # Run SIH 3D Perception & Traversability Pipeline if depth is available
+            if self.perception_pipeline is not None and self.latest_depth_img is not None:
+                rgb_img = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+                depth_m = np.nan_to_num(self.latest_depth_img, nan=10.0, posinf=10.0, neginf=0.1)
+                
+                # Inference cycle
+                result = self.perception_pipeline.process_frame(rgb_img, depth_m, timestamp=time.time())
+                self.latest_perception_result = result
+                
+                # Register 3D obstacles and annotate HUD
+                if result.obstacles:
+                    for obs in result.obstacles:
+                        u_min, v_min, u_max, v_max = obs.bbox_2d
+                        box_color = (0, 255, 100) if obs.is_run_over_allowed else (0, 50, 255)
+                        
+                        # Draw 2D projection bounding box on camera HUD
+                        cv2.rectangle(cv_img, (u_min, v_min), (u_max, v_max), box_color, 2)
+                        tag = f"{obs.semantic_name} | {obs.radial_distance_m:.1f}m"
+                        cv2.putText(cv_img, tag, (u_min, max(20, v_min - 6)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, box_color, 1)
+
+                        # Lethal obstacle avoidance check
+                        if not obs.is_run_over_allowed and obs.radial_distance_m < 8.0:
+                            rx, ry, ryaw = self.robot_pose
+                            obs_x = rx + obs.centroid_x * math.cos(ryaw) - obs.centroid_y * math.sin(ryaw)
+                            obs_y = ry + obs.centroid_x * math.sin(ryaw) + obs.centroid_y * math.cos(ryaw)
+                            self.path_planner.add_obstacle(obs_x, obs_y, radius=max(0.7, obs.width_m/2.0 + 0.3))
+
+                    self.publish_perception_markers(result)
 
             # Visual HUD Overlay
             # 1. Horizon & Center Reticle
@@ -205,6 +256,37 @@ class NavigationManagerNode(Node):
             self.latest_camera_jpg = encoded.tobytes()
         except Exception as e:
             pass
+
+    def publish_perception_markers(self, result):
+        """Publishes 3D localized obstacle markers in RViz."""
+        if not result.obstacles:
+            return
+
+        ma = MarkerArray()
+        for idx, obs in enumerate(result.obstacles):
+            m = Marker()
+            m.header.frame_id = 'base_link'
+            m.header.stamp = self.get_clock().now().to_msg()
+            m.ns = 'perception_3d_obstacles'
+            m.id = idx
+            m.type = Marker.CUBE
+            m.action = Marker.ADD
+            m.pose.position.x = float(obs.centroid_x)
+            m.pose.position.y = float(obs.centroid_y)
+            m.pose.position.z = float(obs.centroid_z)
+            m.pose.orientation.w = 1.0
+            m.scale.x = max(0.2, float(obs.length_m))
+            m.scale.y = max(0.2, float(obs.width_m))
+            m.scale.z = max(0.2, float(obs.height_m))
+            
+            if obs.is_run_over_allowed:
+                m.color.r, m.color.g, m.color.b, m.color.a = 0.2, 0.9, 0.2, 0.6
+            else:
+                m.color.r, m.color.g, m.color.b, m.color.a = 0.95, 0.1, 0.1, 0.75
+            
+            ma.markers.append(m)
+
+        self.perception_obs_pub.publish(ma)
 
     def clicked_point_callback(self, msg):
         """Handles RViz /clicked_point interaction."""
