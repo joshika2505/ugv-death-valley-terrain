@@ -64,7 +64,14 @@ class NavigationManagerNode(Node):
         # Initialize SIH Perception & 3D Traversability Pipeline
         self.perception_pipeline = PerceptionPipeline() if PerceptionPipeline is not None else None
         self.latest_depth_img = None
+        self.latest_rgb_raw = None
         self.latest_perception_result = None
+        self.perception_lock = threading.Lock()
+        
+        # Start background perception worker
+        if self.perception_pipeline is not None:
+            self.perception_worker_thread = threading.Thread(target=self._perception_worker, daemon=True)
+            self.perception_worker_thread.start()
 
         # State Variables
         self.point_a = {'x': 0.0, 'y': 0.0, 'z': self.terrain_analyzer.get_surface_elevation(0.0, 0.0)}
@@ -185,9 +192,41 @@ class NavigationManagerNode(Node):
                     self.trigger_plan_path(start_from_current=True)
                     self.path_status = 'Navigating'
 
+    def _perception_worker(self):
+        """Asynchronous background worker for 3D depth and traversability inference."""
+        while rclpy.ok():
+            try:
+                rgb = None
+                depth = None
+                with self.perception_lock:
+                    if self.latest_rgb_raw is not None and self.latest_depth_img is not None:
+                        rgb = self.latest_rgb_raw.copy()
+                        depth = self.latest_depth_img.copy()
+
+                if rgb is not None and depth is not None:
+                    depth_m = np.nan_to_num(depth, nan=10.0, posinf=10.0, neginf=0.1)
+                    result = self.perception_pipeline.process_frame(rgb, depth_m, timestamp=time.time())
+                    self.latest_perception_result = result
+
+                    # Register lethal obstacles for dynamic avoidance
+                    if result.obstacles:
+                        for obs in result.obstacles:
+                            if not obs.is_run_over_allowed and obs.radial_distance_m < 8.0:
+                                rx, ry, ryaw = self.robot_pose
+                                obs_x = rx + obs.centroid_x * math.cos(ryaw) - obs.centroid_y * math.sin(ryaw)
+                                obs_y = ry + obs.centroid_x * math.sin(ryaw) + obs.centroid_y * math.cos(ryaw)
+                                self.path_planner.add_obstacle(obs_x, obs_y, radius=max(0.7, obs.width_m/2.0 + 0.3))
+
+                        self.publish_perception_markers(result)
+            except Exception as e:
+                pass
+            time.sleep(0.1) # 10 Hz perception rate
+
     def depth_camera_callback(self, msg):
         try:
-            self.latest_depth_img = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
+            d = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
+            with self.perception_lock:
+                self.latest_depth_img = d
         except Exception:
             pass
 
@@ -203,36 +242,19 @@ class NavigationManagerNode(Node):
                 if len(cv_img.shape) == 2:
                     cv_img = cv2.cvtColor(cv_img, cv2.COLOR_GRAY2BGR)
 
+            with self.perception_lock:
+                self.latest_rgb_raw = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+
             h, w, _ = cv_img.shape
 
-            # Run SIH 3D Perception & Traversability Pipeline if depth is available
-            if self.perception_pipeline is not None and self.latest_depth_img is not None:
-                rgb_img = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
-                depth_m = np.nan_to_num(self.latest_depth_img, nan=10.0, posinf=10.0, neginf=0.1)
-                
-                # Inference cycle
-                result = self.perception_pipeline.process_frame(rgb_img, depth_m, timestamp=time.time())
-                self.latest_perception_result = result
-                
-                # Register 3D obstacles and annotate HUD
-                if result.obstacles:
-                    for obs in result.obstacles:
-                        u_min, v_min, u_max, v_max = obs.bbox_2d
-                        box_color = (0, 255, 100) if obs.is_run_over_allowed else (0, 50, 255)
-                        
-                        # Draw 2D projection bounding box on camera HUD
-                        cv2.rectangle(cv_img, (u_min, v_min), (u_max, v_max), box_color, 2)
-                        tag = f"{obs.semantic_name} | {obs.radial_distance_m:.1f}m"
-                        cv2.putText(cv_img, tag, (u_min, max(20, v_min - 6)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, box_color, 1)
-
-                        # Lethal obstacle avoidance check
-                        if not obs.is_run_over_allowed and obs.radial_distance_m < 8.0:
-                            rx, ry, ryaw = self.robot_pose
-                            obs_x = rx + obs.centroid_x * math.cos(ryaw) - obs.centroid_y * math.sin(ryaw)
-                            obs_y = ry + obs.centroid_x * math.sin(ryaw) + obs.centroid_y * math.cos(ryaw)
-                            self.path_planner.add_obstacle(obs_x, obs_y, radius=max(0.7, obs.width_m/2.0 + 0.3))
-
-                    self.publish_perception_markers(result)
+            # Overlay perception obstacles on HUD
+            if self.latest_perception_result is not None and self.latest_perception_result.obstacles:
+                for obs in self.latest_perception_result.obstacles:
+                    u_min, v_min, u_max, v_max = obs.bbox_2d
+                    box_color = (0, 255, 100) if obs.is_run_over_allowed else (0, 50, 255)
+                    cv2.rectangle(cv_img, (u_min, v_min), (u_max, v_max), box_color, 2)
+                    tag = f"{obs.semantic_name} | {obs.radial_distance_m:.1f}m"
+                    cv2.putText(cv_img, tag, (u_min, max(20, v_min - 6)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, box_color, 1)
 
             # Visual HUD Overlay
             # 1. Horizon & Center Reticle
@@ -574,8 +596,11 @@ class NavigationManagerNode(Node):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, directory=web_dir, **kwargs)
 
+            def log_message(self, format, *args):
+                pass # Suppress HTTP request console logging
+
             def do_GET(self):
-                if self.path == '/api/status':
+                if self.path.startswith('/api/status'):
                     self.send_response(200)
                     self.send_header('Content-Type', 'application/json')
                     self.send_header('Access-Control-Allow-Origin', '*')
@@ -603,13 +628,13 @@ class NavigationManagerNode(Node):
                     self.send_header('Access-Control-Allow-Origin', '*')
                     self.end_headers()
                     try:
-                        while True:
+                        while rclpy.ok():
                             if node_ref.latest_camera_jpg:
                                 self.wfile.write(b"--frame\r\n")
                                 self.wfile.write(b"Content-Type: image/jpeg\r\n\r\n")
                                 self.wfile.write(node_ref.latest_camera_jpg)
                                 self.wfile.write(b"\r\n")
-                            time.sleep(0.04) # ~25 FPS
+                            time.sleep(0.066) # ~15 FPS
                     except Exception:
                         pass
                 elif self.path.startswith('/api/camera_frame'):

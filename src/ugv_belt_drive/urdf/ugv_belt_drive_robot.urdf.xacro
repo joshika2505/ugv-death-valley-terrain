@@ -608,40 +608,26 @@
   </gazebo>
 
   <!-- ============================ GAZEBO HARMONIC SYSTEMS ================= -->
-  <!-- 4-Sprocket Synchronous Belt Drive Mobility System -->
+  <!-- 4-Sprocket Unified Synchronous Belt Drive Mobility System -->
   <gazebo>
-    <!-- Front Sprockets Drive -->
     <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
       <left_joint>left_front_sprocket_joint</left_joint>
+      <left_joint>left_rear_sprocket_joint</left_joint>
       <right_joint>right_front_sprocket_joint</right_joint>
+      <right_joint>right_rear_sprocket_joint</right_joint>
       <wheel_separation>${track_separation}</wheel_separation>
       <wheel_radius>${sprocket_radius}</wheel_radius>
-      <max_linear_acceleration>5.0</max_linear_acceleration>
-      <max_angular_acceleration>6.0</max_angular_acceleration>
-      <max_linear_velocity>3.0</max_linear_velocity>
-      <min_linear_velocity>-3.0</min_linear_velocity>
-      <max_angular_velocity>4.0</max_angular_velocity>
-      <min_angular_velocity>-4.0</min_angular_velocity>
+      <max_linear_acceleration>2.5</max_linear_acceleration>
+      <max_angular_acceleration>3.0</max_angular_acceleration>
+      <max_linear_velocity>1.5</max_linear_velocity>
+      <min_linear_velocity>-1.5</min_linear_velocity>
+      <max_angular_velocity>2.0</max_angular_velocity>
+      <min_angular_velocity>-2.0</min_angular_velocity>
       <topic>/cmd_vel</topic>
       <odom_topic>/odom</odom_topic>
       <frame_id>odom</frame_id>
       <child_frame_id>base_footprint</child_frame_id>
       <odom_publish_frequency>50</odom_publish_frequency>
-    </plugin>
-
-    <!-- Rear Sprockets Drive -->
-    <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
-      <left_joint>left_rear_sprocket_joint</left_joint>
-      <right_joint>right_rear_sprocket_joint</right_joint>
-      <wheel_separation>${track_separation}</wheel_separation>
-      <wheel_radius>${sprocket_radius}</wheel_radius>
-      <max_linear_acceleration>5.0</max_linear_acceleration>
-      <max_angular_acceleration>6.0</max_angular_acceleration>
-      <max_linear_velocity>3.0</max_linear_velocity>
-      <min_linear_velocity>-3.0</min_linear_velocity>
-      <max_angular_velocity>4.0</max_angular_velocity>
-      <min_angular_velocity>-4.0</min_angular_velocity>
-      <topic>/cmd_vel</topic>
     </plugin>
 
     <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">

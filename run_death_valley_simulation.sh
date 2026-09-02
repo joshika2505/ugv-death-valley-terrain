@@ -50,8 +50,8 @@ case "$MODE" in
         docker exec -it \
             --env="DISPLAY=$DISPLAY" \
             --env="QT_X11_NO_MITSHM=1" \
-            --env="FASTRTPS_DEFAULT_PROFILES_FILE=/home/ubuntu/sih_ws/src/src/amr4_bringup/config/fastdds_udp.xml" \
-            --env="RMW_FASTRTPS_USE_QOS_FROM_XML=1" \
+            --env="ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST" \
+            --env="ROS_DOMAIN_ID=0" \
             "$CONTAINER_NAME" bash -c "
                 source /opt/ros/jazzy/setup.bash && \
                 cd $WORKSPACE_DIR && \
