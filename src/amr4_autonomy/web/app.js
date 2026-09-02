@@ -196,6 +196,10 @@ document.getElementById('btnReset').onclick = () => {
     fetch('/api/reset', {method: 'POST'}).then(() => fetchStatus());
 };
 
+document.getElementById('btnRecover').onclick = () => {
+    fetch('/api/recover_robot', {method: 'POST'}).then(() => fetchStatus());
+};
+
 function fetchStatus() {
     fetch('/api/status')
         .then(res => res.json())
@@ -222,6 +226,20 @@ function fetchStatus() {
             document.getElementById('val-speed').innerText = data.robot_speed.toFixed(2) + ' m/s';
             document.getElementById('val-terrain').innerText = data.terrain_class;
             document.getElementById('val-pitch-roll').innerText = data.robot_pitch.toFixed(1) + '° / ' + data.robot_roll.toFixed(1) + '°';
+            
+            const stabEl = document.getElementById('val-stability');
+            if (stabEl) {
+                const stab = data.stability_status || 'NORMAL';
+                stabEl.innerText = stab;
+                if (stab === 'CRITICAL_FLIPPED') {
+                    stabEl.style.color = '#ff3366';
+                } else if (stab === 'ANTI_TIP_ACTIVE' || stab === 'CLIMBING_ELEVATION') {
+                    stabEl.style.color = '#ffbb00';
+                } else {
+                    stabEl.style.color = '#00d2ff';
+                }
+            }
+
             document.getElementById('val-clearance').innerText = data.min_clearance > 10 ? '> 5.0 m' : data.min_clearance.toFixed(2) + ' m';
             document.getElementById('mission-badge').innerText = data.path_status.toUpperCase();
 

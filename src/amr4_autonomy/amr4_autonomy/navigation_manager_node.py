@@ -246,10 +246,16 @@ class NavigationManagerNode(Node):
             return
 
         now_sec = time.time()
-        cmd_v, cmd_w, arrived, dist_rem = self.path_tracker.compute_control(
-            self.robot_pose, self.planned_waypoints, now_sec
+        cmd_v, cmd_w, arrived, dist_rem, stab_status = self.path_tracker.compute_control(
+            self.robot_pose, (self.robot_pitch, self.robot_roll), self.planned_waypoints, now_sec
         )
         self.distance_remaining = dist_rem
+        self.stability_status = stab_status
+
+        if stab_status == 'CRITICAL_FLIPPED':
+            self.get_logger().warn('[SafetyReflex] CRITICAL: Rollover detected! Activating flip recovery bursts...', throttle_duration_sec=1.0)
+        elif stab_status == 'ANTI_TIP_ACTIVE':
+            self.get_logger().warn('[SafetyReflex] Steep side-slope detected! Engaging anti-tip stabilization...', throttle_duration_sec=1.5)
 
         if arrived:
             self.path_status = 'Completed'
@@ -422,6 +428,7 @@ class NavigationManagerNode(Node):
                         'robot_roll': round(node_ref.robot_roll, 1),
                         'min_clearance': round(node_ref.min_clearance, 2),
                         'terrain_class': node_ref.terrain_class_str,
+                        'stability_status': getattr(node_ref, 'stability_status', 'NORMAL'),
                         'waypoints_count': len(node_ref.planned_waypoints),
                         'waypoints': node_ref.planned_waypoints[::2] # Decimated for light payload
                     }
@@ -454,7 +461,7 @@ class NavigationManagerNode(Node):
                     node_ref.set_point_b(data.get('x', 15.0), data.get('y', 15.0))
                     res = {'status': 'success', 'point_b': node_ref.point_b}
                 elif self.path == '/api/plan_path':
-                    node_ref.trigger_plan_path()
+                    node_ref.trigger_plan_path(start_from_current=True)
                     res = {'status': 'success', 'waypoints': len(node_ref.planned_waypoints)}
                 elif self.path == '/api/start_navigation':
                     node_ref.start_navigation()
@@ -465,6 +472,14 @@ class NavigationManagerNode(Node):
                 elif self.path == '/api/reset':
                     node_ref.reset_navigation()
                     res = {'status': 'success', 'state': node_ref.path_status}
+                elif self.path == '/api/recover_robot':
+                    # Apply emergency pulse burst to self-right
+                    node_ref.stability_status = 'RECOVERED'
+                    burst = Twist()
+                    burst.linear.x = 0.5
+                    burst.angular.z = 1.5
+                    node_ref.cmd_pub.publish(burst)
+                    res = {'status': 'success', 'message': 'Flip recovery maneuver executed'}
                 else:
                     res = {'status': 'unknown_endpoint'}
 
