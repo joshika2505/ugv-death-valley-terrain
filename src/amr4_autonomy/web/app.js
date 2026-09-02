@@ -19,9 +19,9 @@ let state = {
 
 let clickMode = 'NONE'; // 'SET_A', 'SET_B', 'NONE'
 
-// World coordinates range [-75, 75]
-const WORLD_MIN = -75.0;
-const WORLD_MAX = 75.0;
+// World coordinates range [-50, 50] matching Death Valley Basin
+const WORLD_MIN = -50.0;
+const WORLD_MAX = 50.0;
 
 function worldToCanvas(wx, wy) {
     const cx = ((wx - WORLD_MIN) / (WORLD_MAX - WORLD_MIN)) * canvas.width;
@@ -36,66 +36,77 @@ function canvasToWorld(cx, cy) {
 }
 
 function drawTerrainCanvas() {
-    ctx.fillStyle = '#0d1218';
+    ctx.fillStyle = '#0e131a';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 1. Draw Topographic Death Valley Elevation Zones
-    // Canyon floor & traversable valley (central basin)
-    ctx.fillStyle = 'rgba(25, 38, 28, 0.7)';
+    // 1. Topographic Canyon Basin (Traversable Green Valley Floor)
+    ctx.fillStyle = 'rgba(28, 44, 32, 0.75)';
     ctx.beginPath();
-    ctx.ellipse(canvas.width/2, canvas.height/2, 220, 180, -0.2, 0, Math.PI * 2);
+    ctx.ellipse(canvas.width/2, canvas.height/2, 230, 190, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Secondary valley passes (gentle passes)
-    ctx.fillStyle = 'rgba(35, 48, 32, 0.5)';
+    // Canyon Boundary Ring (The Circle)
+    ctx.strokeStyle = '#4a3b22';
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
-    ctx.ellipse(canvas.width/2 - 70, canvas.height/2 + 50, 120, 80, 0.4, 0, Math.PI * 2);
+    ctx.ellipse(canvas.width/2, canvas.height/2, 230, 190, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Secondary Gentle Pass
+    ctx.fillStyle = 'rgba(38, 54, 40, 0.4)';
+    ctx.beginPath();
+    ctx.ellipse(canvas.width/2 - 50, canvas.height/2 + 30, 140, 90, 0.3, 0, Math.PI * 2);
     ctx.fill();
 
-    // Mountain ridges / steep cliff zones (high terrain)
-    ctx.strokeStyle = 'rgba(160, 90, 40, 0.4)';
-    ctx.lineWidth = 1.5;
-    for (let r = 80; r <= 280; r += 40) {
+    // Outer Mountain Ridge Contours
+    ctx.strokeStyle = 'rgba(180, 100, 45, 0.3)';
+    ctx.lineWidth = 1.2;
+    for (let r = 80; r <= 220; r += 45) {
         ctx.beginPath();
-        ctx.ellipse(canvas.width/2, canvas.height/2, r, r * 0.85, -0.1, 0, Math.PI * 2);
+        ctx.ellipse(canvas.width/2, canvas.height/2, r, r * 0.85, 0, 0, Math.PI * 2);
         ctx.stroke();
     }
 
     // 2. Coordinate Grid Lines & Metric Ticks
-    ctx.strokeStyle = '#18202a';
+    ctx.strokeStyle = '#1a222c';
     ctx.lineWidth = 1;
     ctx.font = '9px Orbitron';
     ctx.fillStyle = '#4a5568';
-    for (let wx = -60; wx <= 60; wx += 20) {
+    for (let wx = -40; wx <= 40; wx += 20) {
         const pt = worldToCanvas(wx, 0);
         ctx.beginPath(); ctx.moveTo(pt.x, 0); ctx.lineTo(pt.x, canvas.height); ctx.stroke();
         ctx.fillText(wx + 'm', pt.x + 2, canvas.height - 4);
     }
-    for (let wy = -60; wy <= 60; wy += 20) {
+    for (let wy = -40; wy <= 40; wy += 20) {
         const pt = worldToCanvas(0, wy);
         ctx.beginPath(); ctx.moveTo(0, pt.y); ctx.lineTo(canvas.width, pt.y); ctx.stroke();
         ctx.fillText(wy + 'm', 4, pt.y - 2);
     }
 
-    // 3. Draw Planned 3D Path
+    // 3. Draw Planned 3D Path (Inside the terrain area)
     if (state.waypoints && state.waypoints.length > 1) {
         ctx.strokeStyle = '#00ff88';
         ctx.lineWidth = 3.5;
         ctx.beginPath();
-        const p0 = worldToCanvas(state.waypoints[0].x, state.waypoints[0].y);
-        ctx.moveTo(p0.x, p0.y);
-        for (let i = 1; i < state.waypoints.length; i++) {
-            const pt = worldToCanvas(state.waypoints[i].x, state.waypoints[i].y);
-            ctx.lineTo(pt.x, pt.y);
+        let first = true;
+        for (let w of state.waypoints) {
+            // Keep points within map visualization
+            const pt = worldToCanvas(w.x, w.y);
+            if (first) {
+                ctx.moveTo(pt.x, pt.y);
+                first = false;
+            } else {
+                ctx.lineTo(pt.x, pt.y);
+            }
         }
         ctx.stroke();
 
-        // Waypoint breadcrumbs
-        ctx.fillStyle = 'rgba(0, 255, 136, 0.5)';
+        // Waypoint breadcrumb dots
+        ctx.fillStyle = 'rgba(0, 255, 136, 0.6)';
         for (let w of state.waypoints) {
             const pt = worldToCanvas(w.x, w.y);
             ctx.beginPath();
-            ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
+            ctx.arc(pt.x, pt.y, 3.5, 0, Math.PI * 2);
             ctx.fill();
         }
     }
@@ -117,7 +128,11 @@ function drawTerrainCanvas() {
     ctx.fillText('B (DEST)', ptB.x + 12, ptB.y + 4);
 
     // 6. Draw Robot (CYAN Tracked Platform)
-    const rPos = worldToCanvas(state.robot_pose.x, state.robot_pose.y);
+    // Clamp visualization to canvas area
+    const clampedRx = Math.max(WORLD_MIN, Math.min(WORLD_MAX, state.robot_pose.x));
+    const clampedRy = Math.max(WORLD_MIN, Math.min(WORLD_MAX, state.robot_pose.y));
+    const rPos = worldToCanvas(clampedRx, clampedRy);
+    
     ctx.save();
     ctx.translate(rPos.x, rPos.y);
     ctx.rotate(-state.robot_pose.yaw);
@@ -279,9 +294,9 @@ function fetchStatus() {
             if (stabEl) {
                 const stab = data.stability_status || 'NORMAL';
                 stabEl.innerText = stab;
-                if (stab === 'CRITICAL_FLIPPED' || data.path_status === 'Ridge_Blocked') {
+                if (stab === 'CRITICAL_FLIPPED' || data.path_status === 'Ridge_Blocked' || data.path_status === 'Reversing') {
                     stabEl.style.color = '#ff3366';
-                } else if (stab === 'ANTI_TIP_ACTIVE' || stab === 'CLIMBING_ELEVATION') {
+                } else if (stab === 'ANTI_TIP_ACTIVE' || stab === 'CLIMBING_ELEVATION' || data.path_status === 'Terrain_Scanning') {
                     stabEl.style.color = '#ffbb00';
                 } else {
                     stabEl.style.color = '#00d2ff';
@@ -294,7 +309,7 @@ function fetchStatus() {
             // Ridge Block Warning Banner
             const ridgeAlert = document.getElementById('ridge-alert');
             if (ridgeAlert) {
-                if (data.path_status === 'Ridge_Blocked') {
+                if (data.path_status === 'Ridge_Blocked' || data.path_status === 'Reversing') {
                     ridgeAlert.classList.remove('hidden');
                 } else {
                     ridgeAlert.classList.add('hidden');

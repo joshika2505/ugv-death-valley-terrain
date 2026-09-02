@@ -244,16 +244,20 @@ class NavigationManagerNode(Node):
         dist = math.hypot(self.point_b['x'] - self.point_a['x'], self.point_b['y'] - self.point_a['y'])
         self.get_logger().info(f'[PointSelector] Point B (Destination) set to: ({x:.2f}, {y:.2f}, {z:.2f}) | Dist: {dist:.2f}m')
 
-    def trigger_plan_path(self, start_from_current=True):
+    def trigger_plan_path(self, start_from_current=False):
         """Runs the 3D Terrain A* Path Planner."""
         if not self.points_set['b']:
             return
 
         self.path_status = 'Planning'
-        start_coord = (self.robot_pose[0], self.robot_pose[1]) if start_from_current else (self.point_a['x'], self.point_a['y'])
+        rx, ry = self.robot_pose[0], self.robot_pose[1]
+        if start_from_current and abs(rx) < 48.0 and abs(ry) < 48.0 and math.hypot(rx, ry) > 0.5:
+            start_coord = (rx, ry)
+        else:
+            start_coord = (self.point_a['x'], self.point_a['y'])
         goal_coord = (self.point_b['x'], self.point_b['y'])
 
-        self.get_logger().info(f'[PathPlanner] Planning 3D terrain-aware route from {start_coord} to {goal_coord}...')
+        self.get_logger().info(f'[PathPlanner] Planning 3D terrain route from {start_coord} to {goal_coord}...')
         self.planned_waypoints = self.path_planner.plan_path(start_coord, goal_coord)
         self.path_status = 'Ready'
         self.get_logger().info(f'[PathPlanner] Route ready with {len(self.planned_waypoints)} safe 3D contour waypoints.')
@@ -554,13 +558,13 @@ class NavigationManagerNode(Node):
                     node_ref.set_point_b(data.get('x', 15.0), data.get('y', 15.0))
                     res = {'status': 'success', 'point_b': node_ref.point_b}
                 elif self.path == '/api/plan_path':
-                    node_ref.trigger_plan_path(start_from_current=True)
+                    node_ref.trigger_plan_path(start_from_current=False)
                     res = {'status': 'success', 'waypoints': len(node_ref.planned_waypoints)}
                 elif self.path == '/api/plan_alternative_path':
                     node_ref.get_logger().info('[PathPlanner] Planning alternative gentle valley pass...')
                     node_ref.path_status = 'Planning'
                     node_ref.planned_waypoints = node_ref.path_planner.plan_gentle_valley_path(
-                        (node_ref.robot_pose[0], node_ref.robot_pose[1]),
+                        (node_ref.point_a['x'], node_ref.point_a['y']),
                         (node_ref.point_b['x'], node_ref.point_b['y'])
                     )
                     node_ref.path_status = 'Ready'
