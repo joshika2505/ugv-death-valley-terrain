@@ -83,7 +83,7 @@ class NavigationManagerNode(Node):
         self.sub_click = self.create_subscription(PointStamped, '/clicked_point', self.clicked_point_callback, 10)
         self.sub_init_pose = self.create_subscription(PoseWithCovarianceStamped, '/initialpose', self.initialpose_callback, 10)
         self.sub_goal_pose = self.create_subscription(PoseStamped, '/goal_pose', self.goalpose_callback, 10)
-        self.sub_cam = self.create_subscription(Image, '/camera/image_raw', self.camera_callback, qos_profile_sensor_data)
+        self.sub_cam = self.create_subscription(Image, '/camera/image_raw', self.camera_callback, 10)
 
         # Main Navigation Control Loop (20 Hz)
         self.nav_timer = self.create_timer(0.05, self.control_loop)
@@ -138,34 +138,72 @@ class NavigationManagerNode(Node):
         if valid:
             self.min_clearance = min(valid)
 
-        # Dynamic Obstacle Handling & Replanning Trigger:
-        # Check forward arc (+/- 45 deg) with threshold < 0.65m to prevent false chassis triggers
+        # Dynamic Obstacle Perception & Smooth Detour Trigger
         num_readings = len(msg.ranges)
         if num_readings > 0:
-            center_idx = num_readings // 2
-            arc = int(num_readings * (45.0 / 360.0))
-            forward_ranges = [
-                msg.ranges[i] for i in range(max(0, center_idx - arc), min(num_readings, center_idx + arc))
-                if 0.55 < msg.ranges[i] < 0.70
-            ]
-            if self.path_status == 'Navigating' and len(forward_ranges) > 5:
+            angle_min = msg.angle_min
+            angle_inc = msg.angle_increment
+            forward_obstacles = []
+            
+            for i, r in enumerate(msg.ranges):
+                if 0.55 < r < 1.4: # Obstacle in path range
+                    angle = angle_min + i * angle_inc
+                    if abs(angle) < math.radians(45.0): # Forward cone
+                        forward_obstacles.append((r, angle))
+
+            if len(forward_obstacles) > 4:
+                # Find closest obstacle distance and angle
+                min_r, min_ang = min(forward_obstacles, key=lambda x: x[0])
+                rx, ry, ryaw = self.robot_pose
+                obs_world_x = rx + min_r * math.cos(ryaw + min_ang)
+                obs_world_y = ry + min_r * math.sin(ryaw + min_ang)
+
+                # Register obstacle into A* planner
+                self.path_planner.add_obstacle(obs_world_x, obs_world_y, radius=0.9)
+
                 now_t = time.time()
-                if not hasattr(self, 'last_replan_time') or (now_t - self.last_replan_time > 3.0):
+                if self.path_status == 'Navigating' and (not hasattr(self, 'last_replan_time') or (now_t - self.last_replan_time > 2.5)):
                     self.last_replan_time = now_t
-                    self.get_logger().warn(f'[ObstacleDetector] Obstacle detected directly ahead! Replanning...')
+                    self.get_logger().warn(f'[ObstaclePerception] Obstacle at {min_r:.2f}m ({obs_world_x:.1f}, {obs_world_y:.1f})! Finding shortest detour...')
                     self.path_status = 'Replanning'
-                    stop_cmd = Twist()
-                    self.cmd_pub.publish(stop_cmd)
                     self.trigger_plan_path(start_from_current=True)
                     self.path_status = 'Navigating'
 
     def camera_callback(self, msg):
         try:
             import cv2
-            cv_img = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-            _, encoded = cv2.imencode('.jpg', cv_img, [cv2.IMWRITE_JPEG_QUALITY, 75])
+            if msg.encoding in ['rgb8', '8UC3']:
+                cv_img = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+            elif msg.encoding == 'bgr8':
+                cv_img = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
+            else:
+                cv_img = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
+                if len(cv_img.shape) == 2:
+                    cv_img = cv2.cvtColor(cv_img, cv2.COLOR_GRAY2BGR)
+
+            h, w, _ = cv_img.shape
+
+            # Visual HUD Overlay
+            # 1. Horizon & Center Reticle
+            cv2.line(cv_img, (w//2 - 25, h//2), (w//2 + 25, h//2), (0, 255, 136), 1)
+            cv2.line(cv_img, (w//2, h//2 - 25), (w//2, h//2 + 25), (0, 255, 136), 1)
+
+            # 2. Header Telemetry Banner
+            status_txt = f"MODE: {self.path_status.upper()} | SPD: {self.robot_speed:.2f} m/s | REMAIN: {self.distance_remaining:.1f}m"
+            cv2.rectangle(cv_img, (10, 10), (w - 10, 42), (15, 20, 25), -1)
+            cv2.rectangle(cv_img, (10, 10), (w - 10, 42), (0, 210, 255), 1)
+            cv2.putText(cv_img, status_txt, (20, 32), cv2.FONT_HERSHEY_SIMPLEX, 0.52, (0, 210, 255), 2)
+
+            # 3. Bottom Clearance & Terrain Banner
+            clr_color = (0, 255, 136) if self.min_clearance > 2.0 else ((0, 180, 255) if self.min_clearance > 1.0 else (0, 50, 255))
+            terr_txt = f"TERRAIN: {self.terrain_class_str.upper()} | CLEARANCE: {self.min_clearance:.2f}m"
+            cv2.rectangle(cv_img, (10, h - 45), (w - 10, h - 12), (15, 20, 25), -1)
+            cv2.rectangle(cv_img, (10, h - 45), (w - 10, h - 12), clr_color, 1)
+            cv2.putText(cv_img, terr_txt, (20, h - 22), cv2.FONT_HERSHEY_SIMPLEX, 0.52, clr_color, 2)
+
+            _, encoded = cv2.imencode('.jpg', cv_img, [cv2.IMWRITE_JPEG_QUALITY, 80])
             self.latest_camera_jpg = encoded.tobytes()
-        except Exception:
+        except Exception as e:
             pass
 
     def clicked_point_callback(self, msg):
@@ -433,7 +471,22 @@ class NavigationManagerNode(Node):
                         'waypoints': node_ref.planned_waypoints[::2] # Decimated for light payload
                     }
                     self.wfile.write(json.dumps(status_data).encode('utf-8'))
-                elif self.path == '/api/camera_frame':
+                elif self.path == '/api/camera_stream':
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'multipart/x-mixed-replace; boundary=frame')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    try:
+                        while True:
+                            if node_ref.latest_camera_jpg:
+                                self.wfile.write(b"--frame\r\n")
+                                self.wfile.write(b"Content-Type: image/jpeg\r\n\r\n")
+                                self.wfile.write(node_ref.latest_camera_jpg)
+                                self.wfile.write(b"\r\n")
+                            time.sleep(0.04) # ~25 FPS
+                    except Exception:
+                        pass
+                elif self.path.startswith('/api/camera_frame'):
                     if node_ref.latest_camera_jpg:
                         self.send_response(200)
                         self.send_header('Content-Type', 'image/jpeg')

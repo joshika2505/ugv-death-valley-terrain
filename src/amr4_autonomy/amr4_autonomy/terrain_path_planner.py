@@ -5,23 +5,32 @@ import numpy as np
 
 class TerrainPathPlanner:
     """
-    3D Terrain-Aware A* Path Planner.
-    Generates safe, energy-efficient, collision-free paths traversing Death Valley contours
-    while avoiding cliffs, steep ridges, and untraversable terrain.
+    3D Terrain-Aware A* Shortest Path & Obstacle Bypass Planner.
+    Finds the mathematically shortest, energy-efficient, collision-free route across Death Valley,
+    smoothly routing around steep hills, rocks, and dynamic obstacle clusters.
     """
     def __init__(self, terrain_analyzer):
         self.ta = terrain_analyzer
-        self.max_climb_slope = 45.0 # Maximum traversable slope in degrees
+        self.max_climb_slope = 35.0 # Max traversable slope in degrees
+        self.dynamic_obstacles = [] # list of (x, y, radius)
 
-    def plan_path(self, start_xy, goal_xy, obstacle_grid=None):
+    def add_obstacle(self, x, y, radius=1.0):
+        """Registers dynamic obstacle from camera/LiDAR to be actively bypassed."""
+        self.dynamic_obstacles.append((float(x), float(y), float(radius)))
+        # Keep latest 30 dynamic obstacles
+        if len(self.dynamic_obstacles) > 30:
+            self.dynamic_obstacles.pop(0)
+
+    def clear_obstacles(self):
+        self.dynamic_obstacles = []
+
+    def plan_path(self, start_xy, goal_xy, dynamic_obs=None):
         """
-        Compute optimal 3D path from start_xy (x, y) to goal_xy (x, y).
-        Returns list of (x, y, z, target_speed) waypoints.
+        Compute optimal shortest 3D path from start_xy to goal_xy bypassing obstacles and steep slopes.
         """
         sx, sy = start_xy
         gx, gy = goal_xy
 
-        # Convert to grid indices
         res = self.ta.resolution
         min_x, min_y = self.ta.min_x, self.ta.min_y
         
@@ -30,6 +39,11 @@ class TerrainPathPlanner:
 
         start_idx = (np.clip(start_idx[0], 0, self.ta.grid_w - 1), np.clip(start_idx[1], 0, self.ta.grid_h - 1))
         goal_idx = (np.clip(goal_idx[0], 0, self.ta.grid_w - 1), np.clip(goal_idx[1], 0, self.ta.grid_h - 1))
+
+        # Check all registered dynamic obstacles
+        obs_list = list(self.dynamic_obstacles)
+        if dynamic_obs:
+            obs_list.extend(dynamic_obs)
 
         # Priority queue for A*
         open_set = []
@@ -65,23 +79,35 @@ class TerrainPathPlanner:
                 if 0 <= nx < self.ta.grid_w and 0 <= ny < self.ta.grid_h:
                     neighbor = (nx, ny)
                     
-                    # Slope check
+                    # 1. Slope Check
                     slope = self.ta.slope_grid[ny, nx]
                     if slope > self.max_climb_slope:
-                        continue # Untraversable slope
+                        continue # Untraversable slope / cliff
 
-                    # Dynamic obstacle check
-                    if obstacle_grid is not None and obstacle_grid[ny, nx] > 50:
+                    # 2. Dynamic Obstacle Clearance Check
+                    wx = min_x + nx * res
+                    wy = min_y + ny * res
+                    blocked_by_obs = False
+                    obs_cost_penalty = 0.0
+
+                    for (ox, oy, orad) in obs_list:
+                        d_obs = math.hypot(wx - ox, wy - oy)
+                        if d_obs < orad:
+                            blocked_by_obs = True
+                            break
+                        elif d_obs < (orad + 1.2):
+                            # Gaussian proximity cost penalty pushing path to shortest safe contour
+                            obs_cost_penalty += (1.2 - (d_obs - orad)) * 15.0
+
+                    if blocked_by_obs:
                         continue
 
-                    # Transition cost calculation
+                    # 3. Transition Cost Calculation (Shortest Path + Terrain Factors)
                     step_dist = math.hypot(dx * res, dy * res)
                     dz = abs(self.ta.height_grid[ny, nx] - self.ta.height_grid[current[1], current[0]])
                     
-                    # Cost multiplier: flat=1.0, slope penalty quadratic, roughness penalty
-                    slope_penalty = 1.0 + (slope / 15.0)**2
-                    roughness_penalty = 1.0 + self.ta.roughness_grid[ny, nx] * 0.1
-                    cost = (step_dist + dz * 1.5) * slope_penalty * roughness_penalty
+                    slope_penalty = 1.0 + (slope / 18.0)**2
+                    cost = (step_dist + dz * 1.2) * slope_penalty + obs_cost_penalty
 
                     tentative_g = g_score[current] + cost
                     if neighbor not in g_score or tentative_g < g_score[neighbor]:
@@ -91,8 +117,7 @@ class TerrainPathPlanner:
                         came_from[neighbor] = current
 
         if not found:
-            print(f'[PathPlanner] Direct A* path blocked by extreme terrain. Generating best-effort contour route...')
-            # Fallback: Straight-line interpolated route with terrain elevation snapping
+            # Fallback path if direct route is locked
             return self._generate_fallback_path(sx, sy, gx, gy)
 
         # Reconstruct path
@@ -103,7 +128,7 @@ class TerrainPathPlanner:
             path_indices.append(curr)
         path_indices.reverse()
 
-        # Convert indices to 3D world coordinates with terrain-adjusted target velocities
+        # Convert to 3D waypoints
         waypoints = []
         total_len = len(path_indices)
         for i, (ix, iy) in enumerate(path_indices):
@@ -112,8 +137,7 @@ class TerrainPathPlanner:
             z = float(self.ta.height_grid[iy, ix])
             slope = float(self.ta.slope_grid[iy, ix])
 
-            # Dynamic velocity assignment based on terrain slope & proximity to goal:
-            # Flat/Safe: 0.9 m/s, Moderate: 0.5 m/s, Steep: 0.3 m/s
+            # Dynamic velocity assignment
             if slope < 10.0:
                 v = 0.9
             elif slope < 20.0:
@@ -121,16 +145,14 @@ class TerrainPathPlanner:
             else:
                 v = 0.3
 
-            # Deceleration near goal (last 5 waypoints)
             remaining = total_len - 1 - i
             if remaining < 5:
                 v = max(0.15, v * (remaining / 5.0))
 
             waypoints.append({'x': x, 'y': y, 'z': z, 'slope': slope, 'speed': v})
 
-        # Smooth waypoints using moving average
-        smoothed = self._smooth_waypoints(waypoints)
-        return smoothed
+        # Smooth waypoints and return
+        return self._smooth_waypoints(waypoints)
 
     def _smooth_waypoints(self, waypoints, window=3):
         if len(waypoints) <= window:
@@ -144,7 +166,6 @@ class TerrainPathPlanner:
 
             avg_x = sum(w['x'] for w in subset) / len(subset)
             avg_y = sum(w['y'] for w in subset) / len(subset)
-            # Re-snap Z to exact terrain surface at smoothed (x, y)
             avg_z = self.ta.get_surface_elevation(avg_x, avg_y)
             avg_slope = sum(w['slope'] for w in subset) / len(subset)
             spd = waypoints[i]['speed']

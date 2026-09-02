@@ -258,10 +258,4 @@ function fetchStatus() {
 // Refresh status every 200ms
 setInterval(fetchStatus, 200);
 
-// Refresh camera frame every 500ms
-setInterval(() => {
-    const img = document.getElementById('robotCamera');
-    img.src = '/api/camera_frame?t=' + Date.now();
-}, 500);
-
 drawTerrainCanvas();
