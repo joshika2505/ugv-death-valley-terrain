@@ -84,7 +84,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('start_x', default_value='0.0', description='Point A X coordinate (Start)'),
         DeclareLaunchArgument('start_y', default_value='0.0', description='Point A Y coordinate (Start)'),
-        DeclareLaunchArgument('start_z', default_value='3.1', description='Point A Z elevation'),
+        DeclareLaunchArgument('start_z', default_value='2.80', description='Point A Z elevation'),
         DeclareLaunchArgument('start_yaw', default_value='0.6', description='Point A Yaw orientation'),
         DeclareLaunchArgument('goal_x', default_value='15.0', description='Point B Goal X coordinate (Stop)'),
         DeclareLaunchArgument('goal_y', default_value='15.0', description='Point B Goal Y coordinate (Stop)'),
