@@ -12,7 +12,7 @@ Panels:
         - /Global Plan1
         - /Camera View (What Robot Sees)1
       Splitter Ratio: 0.5
-    Tree Height: 187
+    Tree Height: 365
   - Class: rviz_common/Views
     Expanded:
       - /Current View1
@@ -66,7 +66,17 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        battery_pack:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        camera_mast:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -75,12 +85,22 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        front_left_wheel_link:
+        camera_pan_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        front_right_wheel_link:
+        camera_tilt_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        electronics_box:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gps_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -89,17 +109,48 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
+        left_belt:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_front_sprocket:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_rear_sprocket:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         lidar_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        rear_left_wheel_link:
+        lidar_mast:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        rear_right_wheel_link:
+        right_belt:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_front_sprocket:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_rear_sprocket:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        trim_strip:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -268,17 +319,31 @@ Visualization Manager:
           Value: true
         base_link:
           Value: true
+        battery_pack:
+          Value: true
         camera_link:
           Value: true
+        camera_mast:
+          Value: true
         camera_optical_frame:
+          Value: true
+        camera_tilt_link:
+          Value: true
+        electronics_box:
           Value: true
         front_left_wheel_link:
           Value: true
         front_right_wheel_link:
           Value: true
+        gps_link:
+          Value: true
         imu_link:
           Value: true
+        left_belt:
+          Value: true
         lidar_link:
+          Value: true
+        lidar_mast:
           Value: true
         map:
           Value: true
@@ -287,6 +352,10 @@ Visualization Manager:
         rear_left_wheel_link:
           Value: true
         rear_right_wheel_link:
+          Value: true
+        right_belt:
+          Value: true
+        trim_strip:
           Value: true
       Marker Scale: 0.4000000059604645
       Name: TF
@@ -298,20 +367,36 @@ Visualization Manager:
           odom:
             base_footprint:
               base_link:
+                battery_pack:
+                  {}
                 camera_link:
                   camera_optical_frame:
                     {}
+                camera_mast:
+                  {}
+                electronics_box:
+                  {}
                 front_left_wheel_link:
                   {}
                 front_right_wheel_link:
                   {}
+                gps_link:
+                  {}
                 imu_link:
                   {}
+                left_belt:
+                  {}
                 lidar_link:
+                  {}
+                lidar_mast:
                   {}
                 rear_left_wheel_link:
                   {}
                 rear_right_wheel_link:
+                  {}
+                right_belt:
+                  {}
+                trim_strip:
                   {}
       Update Interval: 0
       Value: true
@@ -347,7 +432,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 18
+      Distance: 50.01442337036133
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -362,10 +447,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7850000262260437
+      Pitch: 0.09499964118003845
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.7850000262260437
+      Yaw: 5.328206539154053
     Saved: ~
 Window Geometry:
   Camera View (What Robot Sees):
