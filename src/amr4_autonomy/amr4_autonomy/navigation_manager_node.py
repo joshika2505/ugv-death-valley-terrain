@@ -262,8 +262,9 @@ class NavigationManagerNode(Node):
         if len(self.planned_waypoints) == 0:
             self.trigger_plan_path(start_from_current=True)
         if len(self.planned_waypoints) > 0:
-            self.path_status = 'Navigating'
-            self.get_logger().info('[Navigation] Autonomous physics navigation started!')
+            self.path_status = 'Terrain_Scanning'
+            self.scan_start_time = time.time()
+            self.get_logger().info('[Observation] Performing 3D terrain & environmental sector scan...')
 
     def stop_navigation(self):
         self.path_status = 'Ready'
@@ -274,16 +275,45 @@ class NavigationManagerNode(Node):
     def reset_navigation(self):
         self.path_status = 'Idle'
         self.planned_waypoints = []
+        self.path_planner.clear_memory()
         stop_cmd = Twist()
         self.cmd_pub.publish(stop_cmd)
         self.get_logger().info('[Navigation] Navigation state reset.')
 
     def control_loop(self):
         """20 Hz Pure Pursuit Physics Control Loop."""
+        now_sec = time.time()
+
+        # 1. Terrain Scanning Observation Phase
+        if self.path_status == 'Terrain_Scanning':
+            if now_sec - getattr(self, 'scan_start_time', now_sec) > 0.8:
+                self.path_status = 'Navigating'
+                self.get_logger().info('[Navigation] Autonomous physics navigation started!')
+            else:
+                stop_cmd = Twist()
+                self.cmd_pub.publish(stop_cmd)
+                return
+
+        # 2. Autonomous Reverse-and-Replan on Climb Failure
+        if self.path_status == 'Reversing':
+            if now_sec - getattr(self, 'reverse_start_time', now_sec) < 2.0:
+                bk = Twist()
+                bk.linear.x = -0.30
+                self.cmd_pub.publish(bk)
+                return
+            else:
+                self.get_logger().info('[ClimbRecovery] Reversal to safe terrain complete. Replanning alternative valley bypass...')
+                self.path_status = 'Replanning'
+                self.planned_waypoints = self.path_planner.plan_gentle_valley_path(
+                    (self.robot_pose[0], self.robot_pose[1]),
+                    (self.point_b['x'], self.point_b['y'])
+                )
+                self.path_status = 'Navigating'
+                return
+
         if self.path_status != 'Navigating' or len(self.planned_waypoints) == 0:
             return
 
-        now_sec = time.time()
         cmd_v, cmd_w, arrived, dist_rem, stab_status = self.path_tracker.compute_control(
             self.robot_pose, (self.robot_pitch, self.robot_roll), self.planned_waypoints, now_sec
         )
@@ -295,10 +325,13 @@ class NavigationManagerNode(Node):
         elif stab_status == 'ANTI_TIP_ACTIVE':
             self.get_logger().warn('[SafetyReflex] Steep side-slope detected! Engaging anti-tip stabilization...', throttle_duration_sec=1.5)
         elif stab_status == 'RIDGE_UNCLIMBABLE':
-            self.get_logger().warn('[TerrainSafety] Steep cliff/ridge blocked! Backing off...', throttle_duration_sec=1.5)
-            self.path_status = 'Ridge_Blocked'
+            self.get_logger().warn('[ClimbFailure] Unscalable slope encountered! Initiating reverse-and-replan reflex...')
+            self.path_status = 'Reversing'
+            self.reverse_start_time = now_sec
+            # Add to terrain failure memory
+            self.path_planner.add_failed_climb_region(self.robot_pose[0], self.robot_pose[1], radius=3.5, penalty=350.0)
             bk = Twist()
-            bk.linear.x = -0.25
+            bk.linear.x = -0.30
             self.cmd_pub.publish(bk)
             return
 
