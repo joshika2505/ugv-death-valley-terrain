@@ -154,6 +154,18 @@ class TerrainPathPlanner:
         # Smooth waypoints and return
         return self._smooth_waypoints(waypoints)
 
+    
+    def plan_gentle_valley_path(self, start_xy, goal_xy):
+        """
+        Specialized Valley Router: Heavily avoids any steep hills (> 15 deg)
+        and strictly finds gentle, low-altitude valley passes.
+        """
+        old_max_slope = self.max_climb_slope
+        self.max_climb_slope = 16.0 # Strict slope limit for gentle valley navigation
+        path = self.plan_path(start_xy, goal_xy)
+        self.max_climb_slope = old_max_slope
+        return path
+
     def _smooth_waypoints(self, waypoints, window=3):
         if len(waypoints) <= window:
             return waypoints

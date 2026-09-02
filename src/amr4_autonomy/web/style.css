@@ -146,10 +146,24 @@ canvas {
     gap: 15px;
 }
 
+.ridge-alert {
+    background: rgba(255, 187, 0, 0.15);
+    border: 1px solid var(--accent-yellow);
+    color: var(--accent-yellow);
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    animation: pulse 1.5s infinite;
+}
+
 .control-actions {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
 }
 
 .btn {

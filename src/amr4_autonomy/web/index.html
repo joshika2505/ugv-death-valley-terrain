@@ -34,15 +34,22 @@
                     <canvas id="terrainCanvas" width="650" height="520"></canvas>
                     <div class="map-overlay-info">
                         <span>Grid: 150m x 150m</span>
+                        <span id="hover-coord">Cursor: X=0.0m, Y=0.0m</span>
                         <span>Elevation: 0.0m - 18.5m</span>
                     </div>
+                </div>
+                <!-- Ridge Block Warning Alert -->
+                <div id="ridge-alert" class="ridge-alert hidden">
+                    <span>⚠️ <strong>STEEP CLIFF DETECTED:</strong> Bot cannot climb this vertical ridge.</span>
+                    <button id="btnQuickAlt" class="btn" style="padding: 4px 8px; font-size: 0.75rem; background: var(--accent-yellow); color: #000;">🔀 REROUTE VIA VALLEY</button>
                 </div>
                 <!-- Control Button Bar -->
                 <div class="control-actions">
                     <button id="btnSetA" class="btn btn-set-a"><span class="dot green"></span> SET A (START)</button>
                     <button id="btnSetB" class="btn btn-set-b"><span class="dot red"></span> SET B (DEST)</button>
                     <button id="btnPlan" class="btn btn-plan">⚙️ PLAN PATH</button>
-                    <button id="btnStart" class="btn btn-start">▶ START NAVIGATION</button>
+                    <button id="btnAltPlan" class="btn" style="background: rgba(0, 210, 255, 0.15); border-color: var(--accent-blue); color: var(--accent-blue);">🔀 ALT VALLEY PATH</button>
+                    <button id="btnStart" class="btn btn-start">▶ START NAV</button>
                     <button id="btnStop" class="btn btn-stop">⏹ STOP</button>
                     <button id="btnReset" class="btn btn-reset">🔄 RESET</button>
                 </div>

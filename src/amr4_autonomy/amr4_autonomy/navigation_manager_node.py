@@ -294,6 +294,13 @@ class NavigationManagerNode(Node):
             self.get_logger().warn('[SafetyReflex] CRITICAL: Rollover detected! Activating flip recovery bursts...', throttle_duration_sec=1.0)
         elif stab_status == 'ANTI_TIP_ACTIVE':
             self.get_logger().warn('[SafetyReflex] Steep side-slope detected! Engaging anti-tip stabilization...', throttle_duration_sec=1.5)
+        elif stab_status == 'RIDGE_UNCLIMBABLE':
+            self.get_logger().warn('[TerrainSafety] Steep cliff/ridge blocked! Backing off...', throttle_duration_sec=1.5)
+            self.path_status = 'Ridge_Blocked'
+            bk = Twist()
+            bk.linear.x = -0.25
+            self.cmd_pub.publish(bk)
+            return
 
         if arrived:
             self.path_status = 'Completed'
@@ -515,6 +522,15 @@ class NavigationManagerNode(Node):
                     res = {'status': 'success', 'point_b': node_ref.point_b}
                 elif self.path == '/api/plan_path':
                     node_ref.trigger_plan_path(start_from_current=True)
+                    res = {'status': 'success', 'waypoints': len(node_ref.planned_waypoints)}
+                elif self.path == '/api/plan_alternative_path':
+                    node_ref.get_logger().info('[PathPlanner] Planning alternative gentle valley pass...')
+                    node_ref.path_status = 'Planning'
+                    node_ref.planned_waypoints = node_ref.path_planner.plan_gentle_valley_path(
+                        (node_ref.robot_pose[0], node_ref.robot_pose[1]),
+                        (node_ref.point_b['x'], node_ref.point_b['y'])
+                    )
+                    node_ref.path_status = 'Ready'
                     res = {'status': 'success', 'waypoints': len(node_ref.planned_waypoints)}
                 elif self.path == '/api/start_navigation':
                     node_ref.start_navigation()

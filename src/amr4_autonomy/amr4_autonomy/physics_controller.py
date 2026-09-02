@@ -66,6 +66,18 @@ class PhysicsBasedPathTracker:
             counter_steer_w = -0.5 * math.copysign(1.0, roll_deg) if abs_roll > self.max_safe_roll else 0.0
             return safe_crawl_v, counter_steer_w, False, 0.0, 'ANTI_TIP_ACTIVE'
 
+        # -------------------------------------------------------------
+        # 2.5 STEEP RIDGE / INCLINE STALL DETECTION
+        # -------------------------------------------------------------
+        if abs_pitch > 18.0 and self.last_cmd_v > 0.25 and self.current_speed < 0.08:
+            if not hasattr(self, 'stall_start_time') or self.stall_start_time is None:
+                self.stall_start_time = current_time
+            elif current_time - self.stall_start_time > 1.2:
+                # Ridge is unscalable: back off gently and request alternative route
+                return -0.25, 0.0, False, 0.0, 'RIDGE_UNCLIMBABLE'
+        else:
+            self.stall_start_time = None
+
         self.recovery_state = 'NORMAL'
 
         if not waypoints or len(waypoints) == 0:

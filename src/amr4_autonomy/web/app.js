@@ -1,4 +1,3 @@
-
 const canvas = document.getElementById('terrainCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -14,6 +13,7 @@ let state = {
     robot_roll: 0.0,
     min_clearance: 5.0,
     terrain_class: 'Safe',
+    stability_status: 'NORMAL',
     waypoints: []
 };
 
@@ -36,28 +36,51 @@ function canvasToWorld(cx, cy) {
 }
 
 function drawTerrainCanvas() {
-    ctx.fillStyle = '#12161c';
+    ctx.fillStyle = '#0d1218';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Grid lines
-    ctx.strokeStyle = '#1e242c';
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= canvas.width; i += 40) {
-        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
+    // 1. Draw Topographic Death Valley Elevation Zones
+    // Canyon floor & traversable valley (central basin)
+    ctx.fillStyle = 'rgba(25, 38, 28, 0.7)';
+    ctx.beginPath();
+    ctx.ellipse(canvas.width/2, canvas.height/2, 220, 180, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Secondary valley passes (gentle passes)
+    ctx.fillStyle = 'rgba(35, 48, 32, 0.5)';
+    ctx.beginPath();
+    ctx.ellipse(canvas.width/2 - 70, canvas.height/2 + 50, 120, 80, 0.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Mountain ridges / steep cliff zones (high terrain)
+    ctx.strokeStyle = 'rgba(160, 90, 40, 0.4)';
+    ctx.lineWidth = 1.5;
+    for (let r = 80; r <= 280; r += 40) {
+        ctx.beginPath();
+        ctx.ellipse(canvas.width/2, canvas.height/2, r, r * 0.85, -0.1, 0, Math.PI * 2);
+        ctx.stroke();
     }
 
-    // Canyon boundary contours (mock visualization of terrain)
-    ctx.strokeStyle = '#3a3020';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(canvas.width/2, canvas.height/2, 180, 0, Math.PI * 2);
-    ctx.stroke();
+    // 2. Coordinate Grid Lines & Metric Ticks
+    ctx.strokeStyle = '#18202a';
+    ctx.lineWidth = 1;
+    ctx.font = '9px Orbitron';
+    ctx.fillStyle = '#4a5568';
+    for (let wx = -60; wx <= 60; wx += 20) {
+        const pt = worldToCanvas(wx, 0);
+        ctx.beginPath(); ctx.moveTo(pt.x, 0); ctx.lineTo(pt.x, canvas.height); ctx.stroke();
+        ctx.fillText(wx + 'm', pt.x + 2, canvas.height - 4);
+    }
+    for (let wy = -60; wy <= 60; wy += 20) {
+        const pt = worldToCanvas(0, wy);
+        ctx.beginPath(); ctx.moveTo(0, pt.y); ctx.lineTo(canvas.width, pt.y); ctx.stroke();
+        ctx.fillText(wy + 'm', 4, pt.y - 2);
+    }
 
-    // Draw Planned Path
+    // 3. Draw Planned 3D Path
     if (state.waypoints && state.waypoints.length > 1) {
         ctx.strokeStyle = '#00ff88';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 3.5;
         ctx.beginPath();
         const p0 = worldToCanvas(state.waypoints[0].x, state.waypoints[0].y);
         ctx.moveTo(p0.x, p0.y);
@@ -67,8 +90,8 @@ function drawTerrainCanvas() {
         }
         ctx.stroke();
 
-        // Waypoint dots
-        ctx.fillStyle = 'rgba(0, 255, 136, 0.4)';
+        // Waypoint breadcrumbs
+        ctx.fillStyle = 'rgba(0, 255, 136, 0.5)';
         for (let w of state.waypoints) {
             const pt = worldToCanvas(w.x, w.y);
             ctx.beginPath();
@@ -77,52 +100,48 @@ function drawTerrainCanvas() {
         }
     }
 
-    // Draw Point A (GREEN)
+    // 4. Draw Point A (GREEN START)
     const ptA = worldToCanvas(state.start_a.x, state.start_a.y);
     ctx.fillStyle = '#00ff88';
-    ctx.beginPath();
-    ctx.arc(ptA.x, ptA.y, 8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fillStyle = '#00ff88';
-    ctx.font = 'bold 12px Orbitron';
+    ctx.beginPath(); ctx.arc(ptA.x, ptA.y, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#00ff88'; ctx.font = 'bold 12px Orbitron';
     ctx.fillText('A (START)', ptA.x + 12, ptA.y + 4);
 
-    // Draw Point B (RED)
+    // 5. Draw Point B (RED DESTINATION)
     const ptB = worldToCanvas(state.destination_b.x, state.destination_b.y);
     ctx.fillStyle = '#ff3366';
-    ctx.beginPath();
-    ctx.arc(ptB.x, ptB.y, 8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fillStyle = '#ff3366';
-    ctx.font = 'bold 12px Orbitron';
+    ctx.beginPath(); ctx.arc(ptB.x, ptB.y, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#ff3366'; ctx.font = 'bold 12px Orbitron';
     ctx.fillText('B (DEST)', ptB.x + 12, ptB.y + 4);
 
-    // Draw Robot (CYAN Tri-Arrow)
+    // 6. Draw Robot (CYAN Tracked Platform)
     const rPos = worldToCanvas(state.robot_pose.x, state.robot_pose.y);
     ctx.save();
     ctx.translate(rPos.x, rPos.y);
     ctx.rotate(-state.robot_pose.yaw);
     ctx.fillStyle = '#00d2ff';
     ctx.beginPath();
-    ctx.moveTo(12, 0);
-    ctx.lineTo(-8, -8);
-    ctx.lineTo(-4, 0);
-    ctx.lineTo(-8, 8);
+    ctx.moveTo(14, 0);
+    ctx.lineTo(-9, -9);
+    ctx.lineTo(-5, 0);
+    ctx.lineTo(-9, 9);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
     ctx.restore();
 }
 
+// Exact Screen-to-Canvas Ratio Click Handling
 canvas.addEventListener('click', (e) => {
     const rect = canvas.getBoundingClientRect();
-    const cx = e.clientX - rect.left;
-    const cy = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const cx = (e.clientX - rect.left) * scaleX;
+    const cy = (e.clientY - rect.top) * scaleY;
     const worldCoord = canvasToWorld(cx, cy);
 
     if (clickMode === 'SET_A') {
@@ -148,14 +167,30 @@ canvas.addEventListener('click', (e) => {
     }
 });
 
+// Live Hover Coordinates Tracking
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const cx = (e.clientX - rect.left) * scaleX;
+    const cy = (e.clientY - rect.top) * scaleY;
+    const wc = canvasToWorld(cx, cy);
+    const hoverEl = document.getElementById('hover-coord');
+    if (hoverEl) {
+        hoverEl.innerText = 'Cursor: X=' + wc.x.toFixed(1) + 'm, Y=' + wc.y.toFixed(1) + 'm';
+    }
+});
+
 document.getElementById('btnSetA').onclick = () => {
     clickMode = 'SET_A';
     document.getElementById('btnSetA').style.borderColor = '#00ff88';
+    document.getElementById('btnSetB').style.borderColor = '';
 };
 
 document.getElementById('btnSetB').onclick = () => {
     clickMode = 'SET_B';
     document.getElementById('btnSetB').style.borderColor = '#ff3366';
+    document.getElementById('btnSetA').style.borderColor = '';
 };
 
 document.getElementById('btnApplyCoords').onclick = () => {
@@ -183,6 +218,19 @@ document.getElementById('btnApplyCoords').onclick = () => {
 document.getElementById('btnPlan').onclick = () => {
     fetch('/api/plan_path', {method: 'POST'}).then(() => fetchStatus());
 };
+
+document.getElementById('btnAltPlan').onclick = () => {
+    fetch('/api/plan_alternative_path', {method: 'POST'}).then(() => fetchStatus());
+};
+
+const quickAltBtn = document.getElementById('btnQuickAlt');
+if (quickAltBtn) {
+    quickAltBtn.onclick = () => {
+        fetch('/api/plan_alternative_path', {method: 'POST'})
+            .then(() => fetch('/api/start_navigation', {method: 'POST'}))
+            .then(() => fetchStatus());
+    };
+}
 
 document.getElementById('btnStart').onclick = () => {
     fetch('/api/start_navigation', {method: 'POST'}).then(() => fetchStatus());
@@ -231,7 +279,7 @@ function fetchStatus() {
             if (stabEl) {
                 const stab = data.stability_status || 'NORMAL';
                 stabEl.innerText = stab;
-                if (stab === 'CRITICAL_FLIPPED') {
+                if (stab === 'CRITICAL_FLIPPED' || data.path_status === 'Ridge_Blocked') {
                     stabEl.style.color = '#ff3366';
                 } else if (stab === 'ANTI_TIP_ACTIVE' || stab === 'CLIMBING_ELEVATION') {
                     stabEl.style.color = '#ffbb00';
@@ -242,6 +290,16 @@ function fetchStatus() {
 
             document.getElementById('val-clearance').innerText = data.min_clearance > 10 ? '> 5.0 m' : data.min_clearance.toFixed(2) + ' m';
             document.getElementById('mission-badge').innerText = data.path_status.toUpperCase();
+
+            // Ridge Block Warning Banner
+            const ridgeAlert = document.getElementById('ridge-alert');
+            if (ridgeAlert) {
+                if (data.path_status === 'Ridge_Blocked') {
+                    ridgeAlert.classList.remove('hidden');
+                } else {
+                    ridgeAlert.classList.add('hidden');
+                }
+            }
 
             const arrivalBanner = document.getElementById('arrival-banner');
             if (data.path_status === 'Completed') {
