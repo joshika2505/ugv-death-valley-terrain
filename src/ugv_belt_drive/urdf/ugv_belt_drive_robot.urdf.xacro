@@ -117,7 +117,8 @@
       <child link="${side}_front_sprocket"/>
       <origin xyz="${track_wheelbase/2} ${y_sign*(track_separation/2)} ${-ground_clearance}" rpy="0 0 0"/>
       <axis xyz="0 1 0"/>
-      <dynamics damping="0.15" friction="0.05"/>
+      <limit effort="250.0" velocity="30.0"/>
+      <dynamics damping="0.05" friction="0.02"/>
     </joint>
 
     <!-- Rear (idler) sprocket -->
@@ -139,7 +140,8 @@
       <child link="${side}_rear_sprocket"/>
       <origin xyz="${-track_wheelbase/2} ${y_sign*(track_separation/2)} ${-ground_clearance}" rpy="0 0 0"/>
       <axis xyz="0 1 0"/>
-      <dynamics damping="0.1" friction="0.05"/>
+      <limit effort="250.0" velocity="30.0"/>
+      <dynamics damping="0.05" friction="0.02"/>
     </joint>
 
     <!-- Belt shell: visual representation spanning both sprockets. -->
