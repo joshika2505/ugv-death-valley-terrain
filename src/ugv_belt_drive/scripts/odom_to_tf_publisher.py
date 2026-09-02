@@ -17,21 +17,17 @@ class OdomToTFBroadcaster(Node):
         if not self.has_parameter('use_sim_time'):
             self.declare_parameter('use_sim_time', True)
         self.tf_broadcaster = TransformBroadcaster(self)
-
         self.subscription = self.create_subscription(
             Odometry,
             '/ugv/odom',
             self.odom_callback,
             50
         )
-        self.get_logger().info('Synchronized Odom to TF broadcaster started on /ugv/odom -> odom/base_footprint')
+        self.get_logger().info('Odom to TF broadcaster started on /ugv/odom -> odom/base_footprint')
 
     def odom_callback(self, msg: Odometry):
         t = TransformStamped()
-        if msg.header.stamp.sec > 0 or msg.header.stamp.nanosec > 0:
-            t.header.stamp = msg.header.stamp
-        else:
-            t.header.stamp = self.get_clock().now().to_msg()
+        t.header.stamp = self.get_clock().now().to_msg()
         t.header.frame_id = msg.header.frame_id or 'odom'
         t.child_frame_id = msg.child_frame_id or 'base_footprint'
 

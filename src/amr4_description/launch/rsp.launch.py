@@ -5,8 +5,13 @@ from launch.substitutions import Command
 from launch_ros.actions import Node
 
 def generate_launch_description():
-    pkg_path = get_package_share_directory('amr4_description')
-    xacro_file = os.path.join(pkg_path, 'urdf', 'amr4.urdf.xacro')
+    try:
+        pkg_path = get_package_share_directory('ugv_belt_drive')
+        xacro_file = os.path.join(pkg_path, 'urdf', 'ugv_belt_drive_robot.urdf.xacro')
+    except Exception:
+        pkg_path = get_package_share_directory('amr4_description')
+        xacro_file = os.path.join(pkg_path, 'urdf', 'amr4.urdf.xacro')
+    
     robot_description = Command(['xacro ', xacro_file])
 
     return LaunchDescription([

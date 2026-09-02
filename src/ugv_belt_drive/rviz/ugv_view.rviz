@@ -11,14 +11,7 @@ Visualization Manager:
       Name: RobotModel
       Enabled: true
       Description Topic:
-        Depth: 5
-        Durability Policy: Transient Local
-        History Policy: Keep Last
-        Reliability Policy: Reliable
         Value: /robot_description
-      Description Source: Topic
-      Visual Enabled: true
-      Collision Enabled: false
       TF Prefix: ""
     - Class: rviz_default_plugins/TF
       Name: TF
@@ -29,39 +22,23 @@ Visualization Manager:
       Name: LaserScan
       Enabled: true
       Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Best Effort
         Value: /scan
-      Size (m): 0.05
+      Size (m): 0.04
       Color: 255; 200; 0
-    - Class: rviz_default_plugins/Image
-      Name: RobotForwardCamera
+    - Class: rviz_default_plugins/Camera
+      Name: RoverCamera
       Enabled: true
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Best Effort
+      Image Topic:
         Value: /camera/image_raw
     - Class: rviz_default_plugins/Map
       Name: SLAM Map
       Enabled: true
       Topic:
-        Depth: 5
-        Durability Policy: Transient Local
-        History Policy: Keep Last
-        Reliability Policy: Reliable
         Value: /map
     - Class: rviz_default_plugins/Map
       Name: Global Costmap
       Enabled: true
       Topic:
-        Depth: 5
-        Durability Policy: Transient Local
-        History Policy: Keep Last
-        Reliability Policy: Reliable
         Value: /global_costmap/costmap
       Alpha: 0.5
       Color Scheme: costmap
@@ -69,10 +46,6 @@ Visualization Manager:
       Name: Local Costmap
       Enabled: true
       Topic:
-        Depth: 5
-        Durability Policy: Transient Local
-        History Policy: Keep Last
-        Reliability Policy: Reliable
         Value: /local_costmap/costmap
       Alpha: 0.6
       Color Scheme: costmap
@@ -80,30 +53,13 @@ Visualization Manager:
       Name: Planned Path
       Enabled: true
       Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
         Value: /plan
       Color: 0; 255; 0
     - Class: rviz_default_plugins/Odometry
       Name: Odometry
       Enabled: true
       Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Best Effort
         Value: /ugv/odom
-    - Class: rviz_default_plugins/MarkerArray
-      Name: WaypointMarkers
-      Enabled: true
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /waypoint_markers
   Global Options:
     Fixed Frame: odom
     Background Color: 20; 20; 20

@@ -21,9 +21,6 @@ from action_msgs.msg import GoalStatus
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 
 
-from visualization_msgs.msg import Marker, MarkerArray
-
-
 def yaw_to_quaternion(yaw_rad):
     """Convert yaw angle in radians to quaternion (x, y, z, w)."""
     return (0.0, 0.0, math.sin(yaw_rad / 2.0), math.cos(yaw_rad / 2.0))
@@ -74,98 +71,8 @@ class UGVAutonomousMission(Node):
             Twist, '/cmd_vel', 10
         )
 
-        # RViz Waypoint Marker Publisher (Point A Green, Point B Red)
-        self.marker_pub = self.create_publisher(
-            MarkerArray, '/waypoint_markers', 10
-        )
-        self.marker_timer = self.create_timer(1.0, self.publish_waypoint_markers)
-
         # Nav2 Action Client
         self.nav_to_pose_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
-
-    def publish_waypoint_markers(self):
-        ma = MarkerArray()
-        stamp = self.get_clock().now().to_msg()
-
-        # 1. Point A (Green Cylinder)
-        mA_cyl = Marker()
-        mA_cyl.header.frame_id = 'map'
-        mA_cyl.header.stamp = stamp
-        mA_cyl.ns = 'waypoints'
-        mA_cyl.id = 0
-        mA_cyl.type = Marker.CYLINDER
-        mA_cyl.action = Marker.ADD
-        mA_cyl.pose.position.x = 0.0
-        mA_cyl.pose.position.y = 0.0
-        mA_cyl.pose.position.z = 1.0
-        mA_cyl.scale.x = 1.2
-        mA_cyl.scale.y = 1.2
-        mA_cyl.scale.z = 2.0
-        mA_cyl.color.r = 0.0
-        mA_cyl.color.g = 1.0
-        mA_cyl.color.b = 0.2
-        mA_cyl.color.a = 0.85
-        ma.markers.append(mA_cyl)
-
-        # 2. Point A Text Label
-        mA_txt = Marker()
-        mA_txt.header.frame_id = 'map'
-        mA_txt.header.stamp = stamp
-        mA_txt.ns = 'waypoints'
-        mA_txt.id = 1
-        mA_txt.type = Marker.TEXT_VIEW_FACING
-        mA_txt.action = Marker.ADD
-        mA_txt.pose.position.x = 0.0
-        mA_txt.pose.position.y = 0.0
-        mA_txt.pose.position.z = 2.5
-        mA_txt.scale.z = 0.8
-        mA_txt.color.r = 0.2
-        mA_txt.color.g = 1.0
-        mA_txt.color.b = 0.4
-        mA_txt.color.a = 1.0
-        mA_txt.text = 'POINT A (START)'
-        ma.markers.append(mA_txt)
-
-        # 3. Point B (Red Cylinder & Sphere)
-        mB_cyl = Marker()
-        mB_cyl.header.frame_id = 'map'
-        mB_cyl.header.stamp = stamp
-        mB_cyl.ns = 'waypoints'
-        mB_cyl.id = 2
-        mB_cyl.type = Marker.CYLINDER
-        mB_cyl.action = Marker.ADD
-        mB_cyl.pose.position.x = self.target_x
-        mB_cyl.pose.position.y = self.target_y
-        mB_cyl.pose.position.z = 1.5
-        mB_cyl.scale.x = 1.4
-        mB_cyl.scale.y = 1.4
-        mB_cyl.scale.z = 3.0
-        mB_cyl.color.r = 1.0
-        mB_cyl.color.g = 0.1
-        mB_cyl.color.b = 0.1
-        mB_cyl.color.a = 0.9
-        ma.markers.append(mB_cyl)
-
-        # 4. Point B Text Label
-        mB_txt = Marker()
-        mB_txt.header.frame_id = 'map'
-        mB_txt.header.stamp = stamp
-        mB_txt.ns = 'waypoints'
-        mB_txt.id = 3
-        mB_txt.type = Marker.TEXT_VIEW_FACING
-        mB_txt.action = Marker.ADD
-        mB_txt.pose.position.x = self.target_x
-        mB_txt.pose.position.y = self.target_y
-        mB_txt.pose.position.z = 3.5
-        mB_txt.scale.z = 0.8
-        mB_txt.color.r = 1.0
-        mB_txt.color.g = 0.2
-        mB_txt.color.b = 0.2
-        mB_txt.color.a = 1.0
-        mB_txt.text = 'POINT B (GOAL)'
-        ma.markers.append(mB_txt)
-
-        self.marker_pub.publish(ma)
 
     def odom_callback(self, msg: Odometry):
         self.current_pose = msg.pose.pose
@@ -214,6 +121,7 @@ class UGVAutonomousMission(Node):
     def dispatch_nav2_goal(self):
         goal_msg = NavigateToPose.Goal()
         goal_msg.pose.header.frame_id = 'map'
+        goal_msg.pose.header.stamp = self.get_clock().now().to_msg()
         goal_msg.pose.pose.position.x = self.target_x
         goal_msg.pose.pose.position.y = self.target_y
         goal_msg.pose.pose.position.z = 0.0
@@ -224,28 +132,18 @@ class UGVAutonomousMission(Node):
         goal_msg.pose.pose.orientation.z = qz
         goal_msg.pose.pose.orientation.w = qw
 
-        goal_handle = None
-        for attempt in range(1, 15):
-            goal_msg.pose.header.stamp = self.get_clock().now().to_msg()
-            self.get_logger().info(f"Sending goal to Nav2 (Attempt {attempt}/15)...")
-            send_goal_future = self.nav_to_pose_client.send_goal_async(
-                goal_msg, feedback_callback=self.nav2_feedback_callback
-            )
-            rclpy.spin_until_future_complete(self, send_goal_future, timeout_sec=5.0)
+        send_goal_future = self.nav_to_pose_client.send_goal_async(
+            goal_msg, feedback_callback=self.nav2_feedback_callback
+        )
+        rclpy.spin_until_future_complete(self, send_goal_future, timeout_sec=10.0)
 
-            if send_goal_future.done():
-                goal_handle = send_goal_future.result()
-                if goal_handle and goal_handle.accepted:
-                    self.get_logger().info("Nav2 Goal accepted! Tracking progress to destination...")
-                    break
-                else:
-                    self.get_logger().warn(f"Nav2 goal not accepted yet (waiting for SLAM map/costmap to initialize)... retry in 2s")
-            time.sleep(2.0)
-
-        if not goal_handle or not goal_handle.accepted:
-            self.get_logger().warn("Nav2 planner not ready yet. Falling back to autonomous reactive obstacle navigation...")
-            self.execute_reactive_navigation()
+        goal_handle = send_goal_future.result()
+        if not goal_handle.accepted:
+            self.get_logger().error("Nav2 goal rejected by planner.")
+            self.mission_completed = True
             return
+
+        self.get_logger().info("Nav2 Goal accepted! Tracking progress to destination...")
         res_future = goal_handle.get_result_async()
         start_time = time.time()
 

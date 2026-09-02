@@ -53,27 +53,12 @@ def launch_setup(context, *args, **kwargs):
 
     world_dir = os.path.dirname(os.path.abspath(world_file)) if os.path.isfile(world_file) else pkg_share
 
-    # Safely parse coordinate arguments
-    try:
-        goal_x = float(goal_x_arg) if goal_x_arg.strip() else 5.0
-    except (ValueError, TypeError):
-        goal_x = 5.0
-    try:
-        goal_y = float(goal_y_arg) if goal_y_arg.strip() else 0.0
-    except (ValueError, TypeError):
-        goal_y = 0.0
-    try:
-        start_x = float(start_x_arg) if start_x_arg.strip() else 0.0
-    except (ValueError, TypeError):
-        start_x = 0.0
-    try:
-        start_y = float(start_y_arg) if start_y_arg.strip() else 0.0
-    except (ValueError, TypeError):
-        start_y = 0.0
-    try:
-        start_z = float(start_z_arg) if start_z_arg.strip() else 0.35
-    except (ValueError, TypeError):
-        start_z = 0.35
+    # Auto-load Point A and Point B from terrain_metadata.json if available
+    goal_x = float(goal_x_arg)
+    goal_y = float(goal_y_arg)
+    start_x = float(start_x_arg)
+    start_y = float(start_y_arg)
+    start_z = float(start_z_arg)
 
     meta_path = os.path.join(world_dir, 'terrain_metadata.json')
     if os.path.isfile(meta_path):
@@ -85,7 +70,6 @@ def launch_setup(context, *args, **kwargs):
             if 'gazebo_x' in pt_a and start_x_arg == '0.0':
                 start_x = float(pt_a.get('gazebo_x', 0.0))
                 start_y = float(pt_a.get('gazebo_y', 0.0))
-                start_z = float(pt_a.get('safe_spawn_z', 0.35))
             if 'gazebo_x' in pt_b and goal_x_arg == '5.0':
                 goal_x = float(pt_b.get('gazebo_x', 5.0))
                 goal_y = float(pt_b.get('gazebo_y', 0.0))
@@ -142,7 +126,7 @@ def launch_setup(context, *args, **kwargs):
             '--goal_x', str(goal_x),
             '--goal_y', str(goal_y),
             '--goal_yaw', '0.0',
-            '--timeout', '600.0'
+            '--timeout', '90.0'
         ]
         mission_dispatcher = TimerAction(
             period=12.0,

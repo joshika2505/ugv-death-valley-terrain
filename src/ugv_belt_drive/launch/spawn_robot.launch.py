@@ -61,7 +61,7 @@ def launch_setup(context, *args, **kwargs):
         parameters=[{
             'robot_description': robot_description,
             'use_sim_time': use_sim_time,
-            'publish_frequency': 0.0
+            'publish_frequency': 30.0
         }]
     )
 
@@ -70,7 +70,7 @@ def launch_setup(context, *args, **kwargs):
         executable='create',
         output='screen',
         arguments=[
-            '-string', Command(['xacro ', xacro_file]),
+            '-topic', 'robot_description',
             '-name', 'ugv_belt_drive',
             '-x', x,
             '-y', y,
