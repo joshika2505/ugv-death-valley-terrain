@@ -71,8 +71,10 @@
   <!-- ============================ CHASSIS ================================ -->
   <link name="base_link">
     <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry><box size="${chassis_length} ${chassis_width} ${chassis_height}"/></geometry>
+      <origin xyz="0 0 -0.05" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ugv_belt_drive/meshes/sih_bot.stl" scale="1.0 1.0 1.0"/>
+      </geometry>
       <material name="matte_black"/>
     </visual>
     <collision>

@@ -1,0 +1,59 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <model name="small_mountain_terrain">
+    <static>true</static>
+    <link name="link">
+      <!-- Physical Collision -->
+      <collision name="collision">
+        <geometry>
+          <mesh>
+            <uri>model://small_mountain_terrain/meshes/small_mountain_collision.stl</uri>
+          </mesh>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.2</mu>
+              <mu2>1.2</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+
+      <!-- Mountain Surface (Vegetation, Forest & Trails) -->
+      <visual name="surface_visual">
+        <geometry>
+          <mesh>
+            <uri>model://small_mountain_terrain/meshes/mountain_surface.obj</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.85 0.85 0.85 1.0</ambient>
+          <diffuse>1.0 1.0 1.0 1.0</diffuse>
+          <specular>0.0 0.0 0.0 1.0</specular>
+          <pbr>
+            <metal>
+              <albedo_map>model://small_mountain_terrain/materials/textures/overlay.png</albedo_map>
+              <roughness>0.85</roughness>
+              <metalness>0.02</metalness>
+            </metal>
+          </pbr>
+        </material>
+      </visual>
+
+      <!-- Subterranean Bedrock & Mountain Base Skirt -->
+      <visual name="bedrock_visual">
+        <geometry>
+          <mesh>
+            <uri>model://small_mountain_terrain/meshes/mountain_bedrock.obj</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.24 0.22 0.20 1.0</ambient>
+          <diffuse>0.34 0.30 0.26 1.0</diffuse>
+          <specular>0.02 0.02 0.02 1.0</specular>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>

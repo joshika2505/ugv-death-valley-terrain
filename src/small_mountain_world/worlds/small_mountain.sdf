@@ -1,0 +1,228 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <world name="small_mountain_world">
+    <!-- High-Performance Physics Configuration -->
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <!-- Essential Gazebo Sim Systems -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics" />
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands" />
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster" />
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu" />
+
+    <!-- Atmospheric Sky & Sunlight with Rayleigh Scattering -->
+    <scene>
+      <ambient>0.50 0.55 0.65 1.0</ambient>
+      <background>0.50 0.72 0.95 1.0</background>
+      <shadows>true</shadows>
+      <grid>false</grid>
+      <origin_visual>false</origin_visual>
+      <sky>
+        <time>11</time>
+        <sunrise>6</sunrise>
+        <sunset>19</sunset>
+        <clouds>
+          <speed>8</speed>
+          <humidity>0.5</humidity>
+          <mean_size>0.3</mean_size>
+        </clouds>
+      </sky>
+    </scene>
+
+    <!-- Warm Natural Sun (5500K Sunlight) -->
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 -5000 6000 0 0 0</pose>
+      <diffuse>0.96 0.92 0.82 1.0</diffuse>
+      <specular>0.0 0.0 0.0 1.0</specular>
+      <direction>0.0 0.6 -0.6</direction>
+      <attenuation>
+        <range>20000</range>
+        <constant>0.9</constant>
+        <linear>0.005</linear>
+        <quadratic>0.0002</quadratic>
+      </attenuation>
+    </light>
+
+    <!-- GUI Controls & Cinematic Mountain Camera -->
+    <gui fullscreen="0">
+      <plugin filename="MinimalScene" name="3D View">
+        <gz-gui>
+          <title>3D View</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="string" key="state">docked</property>
+        </gz-gui>
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <ambient_light>0.52 0.58 0.66</ambient_light>
+        <background_color>0.50 0.72 0.95</background_color>
+        <camera_pose>0.0 -2500.0 1350.0 0.0 0.45 1.5708</camera_pose>
+        <camera_clip>
+          <near>1.0</near>
+          <far>30000.0</far>
+        </camera_clip>
+      </plugin>
+
+      <plugin filename="InteractiveViewControl" name="Interactive view control">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">10</property>
+          <property key="height" type="double">10</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="CameraTracking" name="Camera Tracking">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">10</property>
+          <property key="height" type="double">10</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="GzSceneManager" name="Scene Manager">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">10</property>
+          <property key="height" type="double">10</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="SelectEntities" name="Select Entities">
+        <gz-gui>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="string" key="state">floating</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="WorldControl" name="World control">
+        <gz-gui>
+          <title>World control</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="height">72</property>
+          <property type="double" key="width">121</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="cardBackground" type="string">#666666</property>
+        </gz-gui>
+        <play_pause>true</play_pause>
+        <step>true</step>
+        <start_paused>false</start_paused>
+        <use_event>true</use_event>
+      </plugin>
+      <plugin filename="WorldStats" name="World stats">
+        <gz-gui>
+          <title>World stats</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="height">72</property>
+          <property type="double" key="width">290</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="cardBackground" type="string">#666666</property>
+        </gz-gui>
+        <sim_time>true</sim_time>
+        <real_time>true</real_time>
+        <real_time_factor>true</real_time_factor>
+        <iterations>true</iterations>
+      </plugin>
+    </gui>
+
+    <!-- Surrounding Natural Valley Floor (Expansive Horizon) -->
+    <model name="valley_landscape">
+      <static>true</static>
+      <pose>0 0 -2.0 0 0 0</pose>
+      <link name="link">
+        <collision name="col">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>16000 16000</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="vis">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>16000 16000</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.24 0.32 0.18 1.0</ambient>
+            <diffuse>0.30 0.40 0.22 1.0</diffuse>
+            <specular>0.0 0.0 0.0 1.0</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Small Mountain 3D Terrain Model -->
+    <model name="small_mountain_terrain">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <mesh>
+              <uri>model://small_mountain_terrain/meshes/small_mountain_collision.stl</uri>
+            </mesh>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1.2</mu>
+                <mu2>1.2</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+
+        <!-- Mountain Topography & Vegetation -->
+        <visual name="surface_visual">
+          <geometry>
+            <mesh>
+              <uri>model://small_mountain_terrain/meshes/mountain_surface.obj</uri>
+            </mesh>
+          </geometry>
+          <material>
+            <ambient>0.85 0.85 0.85 1.0</ambient>
+            <diffuse>1.0 1.0 1.0 1.0</diffuse>
+            <specular>0.0 0.0 0.0 1.0</specular>
+            <pbr>
+              <metal>
+                <albedo_map>model://small_mountain_terrain/materials/textures/overlay.png</albedo_map>
+                <roughness>0.85</roughness>
+                <metalness>0.02</metalness>
+              </metal>
+            </pbr>
+          </material>
+        </visual>
+
+        <!-- Weathered Bedrock Skirt -->
+        <visual name="bedrock_visual">
+          <geometry>
+            <mesh>
+              <uri>model://small_mountain_terrain/meshes/mountain_bedrock.obj</uri>
+            </mesh>
+          </geometry>
+          <material>
+            <ambient>0.24 0.22 0.20 1.0</ambient>
+            <diffuse>0.34 0.30 0.26 1.0</diffuse>
+            <specular>0.02 0.02 0.02 1.0</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

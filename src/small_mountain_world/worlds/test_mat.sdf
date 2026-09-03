@@ -1,0 +1,34 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <world name="test_mat">
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics" />
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster" />
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 1000 0.4 0.6 0</pose>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+      <direction>-0.4 0.3 -0.85</direction>
+    </light>
+    <model name="m">
+      <static>true</static>
+      <link name="l">
+        <visual name="v">
+          <geometry>
+            <mesh>
+              <uri>/home/ubuntu/sih_ws/install/small_mountain_world/share/small_mountain_world/meshes/small_mountain_visual.obj</uri>
+            </mesh>
+          </geometry>
+          <material>
+            <pbr>
+              <metal>
+                <albedo_map>/home/ubuntu/sih_ws/install/small_mountain_world/share/small_mountain_world/textures/overlay.png</albedo_map>
+                <roughness>0.85</roughness>
+                <metalness>0.05</metalness>
+              </metal>
+            </pbr>
+          </material>
+        </visual>
+      </link>
+    </model>
+  </world>
+</sdf>
