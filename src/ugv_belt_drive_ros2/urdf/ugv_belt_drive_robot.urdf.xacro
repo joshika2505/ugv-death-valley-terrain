@@ -1,0 +1,518 @@
+<?xml version="1.0"?>
+<robot name="ugv_belt_drive" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- =========================================================
+       UGV BELT-DRIVE TERRAIN ROBOT (ROS 2 & GAZEBO CAMERA POV)
+       Features:
+       - Low CoG skid-steer track drive platform.
+       - Telescopic Prismatic Camera Mast Suspension ($1350\text{ N/m}$ spring, $45\text{ N/(m/s)}$ damper).
+       - Rover-Style Pan-Tilt Gimbal Head with Live Camera Stream (`/camera/image_raw`).
+       - Camera Head IMU (`/camera/imu/data`) & Chassis IMU (`/imu/data`).
+       - Package mesh relative resolution for RViz 2 & Gazebo Classic.
+       ========================================================= -->
+
+  <!-- ============================ PROPERTIES ============================ -->
+  <xacro:property name="PI" value="3.14159265359"/>
+
+  <!-- Chassis -->
+  <xacro:property name="chassis_length" value="0.50"/>
+  <xacro:property name="chassis_width"  value="0.34"/>
+  <xacro:property name="chassis_height" value="0.12"/>
+  <xacro:property name="chassis_mass"   value="9.5"/>
+  <xacro:property name="ground_clearance" value="0.07"/>
+
+  <!-- Track / belt drive -->
+  <xacro:property name="sprocket_radius" value="0.065"/>
+  <xacro:property name="sprocket_width"  value="0.05"/>
+  <xacro:property name="sprocket_mass"   value="0.6"/>
+  <xacro:property name="track_separation" value="0.40"/>
+  <xacro:property name="track_wheelbase"  value="0.34"/>
+
+  <!-- Package Mesh URL Prefix -->
+  <xacro:property name="mesh_pkg" value="package://ugv_belt_drive_ros2/meshes"/>
+
+  <!-- ============================ MATERIALS ============================= -->
+  <material name="matte_black">    <color rgba="0.08 0.08 0.08 1.0"/> </material>
+  <material name="signal_yellow">  <color rgba="1.0 0.75 0.0 1.0"/>  </material>
+  <material name="dark_grey">      <color rgba="0.22 0.22 0.22 1.0"/> </material>
+  <material name="lens_glass">     <color rgba="0.1 0.1 0.15 0.95"/> </material>
+  <material name="metallic_silver"><color rgba="0.80 0.80 0.85 1.0"/></material>
+
+  <!-- ============================ INERTIA MACROS =========================== -->
+  <xacro:macro name="box_inertia" params="mass x y z">
+    <inertial>
+      <mass value="${mass}"/>
+      <inertia ixx="${mass/12.0*(y*y+z*z)}" ixy="0.0" ixz="0.0"
+               iyy="${mass/12.0*(x*x+z*z)}" iyz="0.0"
+               izz="${mass/12.0*(x*x+y*y)}"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="cylinder_inertia" params="mass r h">
+    <inertial>
+      <mass value="${mass}"/>
+      <inertia ixx="${mass/12.0*(3*r*r+h*h)}" ixy="0.0" ixz="0.0"
+               iyy="${mass/12.0*(3*r*r+h*h)}" iyz="0.0"
+               izz="${mass*r*r/2.0}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- ============================ BASE FOOTPRINT ========================= -->
+  <link name="base_footprint"/>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 ${ground_clearance + sprocket_radius}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ============================ CHASSIS ================================ -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="${mesh_pkg}/ugv_chassis.dae"/></geometry>
+      <material name="matte_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="${chassis_length} ${chassis_width} ${chassis_height}"/></geometry>
+    </collision>
+    <xacro:box_inertia mass="${chassis_mass}" x="${chassis_length}" y="${chassis_width}" z="${chassis_height}"/>
+  </link>
+
+  <!-- Top Deck Accent Plate (Signal Yellow) -->
+  <link name="deck_accent">
+    <visual>
+      <geometry><box size="0.38 0.03 0.008"/></geometry>
+      <material name="signal_yellow"/>
+    </visual>
+  </link>
+  <joint name="deck_accent_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="deck_accent"/>
+    <origin xyz="0 0 ${chassis_height/2 + 0.008}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ============================ BELT-DRIVE TRACK MACRO ================= -->
+  <xacro:macro name="track_side" params="side y_sign driven">
+    <!-- Front sprocket -->
+    <link name="${side}_front_sprocket">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry><mesh filename="${mesh_pkg}/sprocket_wheel.dae"/></geometry>
+        <material name="dark_grey"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
+        <geometry><cylinder radius="${sprocket_radius}" length="${sprocket_width}"/></geometry>
+      </collision>
+      <xacro:cylinder_inertia mass="${sprocket_mass}" r="${sprocket_radius}" h="${sprocket_width}"/>
+    </link>
+
+    <joint name="${side}_front_sprocket_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${side}_front_sprocket"/>
+      <origin xyz="${track_wheelbase/2} ${y_sign*(track_separation/2)} ${-ground_clearance}" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+      <limit effort="400.0" velocity="40.0"/>
+      <dynamics damping="0.05" friction="0.02"/>
+    </joint>
+
+    <gazebo reference="${side}_front_sprocket">
+      <mu1>2.5</mu1>
+      <mu2>2.5</mu2>
+      <kp>1000000.0</kp>
+      <kd>100.0</kd>
+    </gazebo>
+
+    <!-- Rear sprocket -->
+    <link name="${side}_rear_sprocket">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry><mesh filename="${mesh_pkg}/sprocket_wheel.dae"/></geometry>
+        <material name="dark_grey"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
+        <geometry><cylinder radius="${sprocket_radius}" length="${sprocket_width}"/></geometry>
+      </collision>
+      <xacro:cylinder_inertia mass="${sprocket_mass}" r="${sprocket_radius}" h="${sprocket_width}"/>
+    </link>
+
+    <joint name="${side}_rear_sprocket_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${side}_rear_sprocket"/>
+      <origin xyz="${-track_wheelbase/2} ${y_sign*(track_separation/2)} ${-ground_clearance}" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+      <limit effort="400.0" velocity="40.0"/>
+      <dynamics damping="0.05" friction="0.02"/>
+    </joint>
+
+    <gazebo reference="${side}_rear_sprocket">
+      <mu1>2.5</mu1>
+      <mu2>2.5</mu2>
+      <kp>1000000.0</kp>
+      <kd>100.0</kd>
+    </gazebo>
+
+    <!-- Track Belt Shell -->
+    <link name="${side}_belt">
+      <visual>
+        <origin xyz="0 0 ${-ground_clearance}" rpy="0 0 0"/>
+        <geometry><mesh filename="${mesh_pkg}/track_belt.dae"/></geometry>
+        <material name="matte_black"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 ${-ground_clearance}" rpy="0 0 0"/>
+        <geometry><box size="${track_wheelbase} ${sprocket_width} ${2*sprocket_radius*0.9}"/></geometry>
+      </collision>
+      <inertial>
+        <mass value="0.4"/>
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      </inertial>
+    </link>
+    <joint name="${side}_belt_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="${side}_belt"/>
+      <origin xyz="0 ${y_sign*(track_separation/2)} 0" rpy="0 0 0"/>
+    </joint>
+
+    <xacro:if value="${driven}">
+      <transmission name="${side}_front_trans">
+        <type>transmission_interface/SimpleTransmission</type>
+        <joint name="${side}_front_sprocket_joint">
+          <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+        </joint>
+        <actuator name="${side}_front_motor">
+          <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+          <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+      </transmission>
+    </xacro:if>
+  </xacro:macro>
+
+  <xacro:track_side side="left"  y_sign="1"  driven="true"/>
+  <xacro:track_side side="right" y_sign="-1" driven="true"/>
+
+  <!-- ============================ LOWERED CoG BATTERY & ELECTRONICS ======= -->
+  <link name="battery_pack">
+    <visual><geometry><box size="0.18 0.12 0.055"/></geometry><material name="matte_black"/></visual>
+    <collision><geometry><box size="0.18 0.12 0.055"/></geometry></collision>
+    <xacro:box_inertia mass="2.4" x="0.18" y="0.12" z="0.055"/>
+  </link>
+  <joint name="battery_pack_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="battery_pack"/>
+    <origin xyz="0.06 0 -0.02" rpy="0 0 0"/>
+  </joint>
+
+  <link name="electronics_box">
+    <visual><geometry><box size="0.16 0.20 0.055"/></geometry><material name="signal_yellow"/></visual>
+    <collision><geometry><box size="0.16 0.20 0.055"/></geometry></collision>
+    <xacro:box_inertia mass="1.3" x="0.16" y="0.20" z="0.055"/>
+  </link>
+  <joint name="electronics_box_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="electronics_box"/>
+    <origin xyz="-0.08 0 -0.02" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ============================ MAIN CHASSIS IMU ======================== -->
+  <link name="imu_link">
+    <visual><geometry><box size="0.03 0.03 0.01"/></geometry><material name="signal_yellow"/></visual>
+    <collision><geometry><box size="0.03 0.03 0.01"/></geometry></collision>
+    <xacro:box_inertia mass="0.05" x="0.03" y="0.03" z="0.01"/>
+  </link>
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0 0 ${chassis_height/2 + 0.005}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ============================ 360 LiDAR =============================== -->
+  <link name="lidar_link">
+    <visual>
+      <geometry><cylinder radius="0.035" length="0.04"/></geometry>
+      <material name="matte_black"/>
+    </visual>
+    <collision>
+      <geometry><cylinder radius="0.035" length="0.04"/></geometry>
+    </collision>
+    <xacro:cylinder_inertia mass="0.15" r="0.035" h="0.04"/>
+  </link>
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="-0.04 0 ${chassis_height/2 + 0.05}" rpy="0 0 0"/>
+  </joint>
+
+  <gazebo reference="lidar_link">
+    <sensor name="lidar_sensor" type="gpu_lidar">
+      <always_on>true</always_on>
+      <update_rate>20</update_rate>
+      <topic>/scan</topic>
+      <gz_frame_id>lidar_link</gz_frame_id>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>360</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.14159</min_angle>
+            <max_angle>3.14159</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.15</min>
+          <max>25.0</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+    </sensor>
+  </gazebo>
+
+  <!-- ============================ CAMERA MAST SUSPENSION ================== -->
+  <link name="camera_suspension_housing">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="${mesh_pkg}/camera_suspension_base.dae"/></geometry>
+      <material name="dark_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.035" rpy="0 0 0"/>
+      <geometry><cylinder radius="0.022" length="0.070"/></geometry>
+    </collision>
+    <xacro:cylinder_inertia mass="0.30" r="0.022" h="0.070"/>
+  </link>
+  <joint name="camera_suspension_housing_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_suspension_housing"/>
+    <origin xyz="0.16 0 ${chassis_height/2 + 0.006}" rpy="0 0 0"/>
+  </joint>
+
+  <link name="camera_suspension_piston">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="${mesh_pkg}/camera_suspension_piston.dae"/></geometry>
+      <material name="metallic_silver"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.12" rpy="0 0 0"/>
+      <geometry><cylinder radius="0.012" length="0.24"/></geometry>
+    </collision>
+    <xacro:cylinder_inertia mass="0.20" r="0.012" h="0.24"/>
+  </link>
+  
+  <joint name="camera_mast_joint" type="prismatic">
+    <parent link="camera_suspension_housing"/>
+    <child link="camera_suspension_piston"/>
+    <origin xyz="0 0 0.035" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-0.035" upper="0.010" effort="150.0" velocity="1.5"/>
+    <dynamics damping="45.0" spring_stiffness="1350.0" spring_reference="0.0"/>
+  </joint>
+
+  <gazebo reference="camera_mast_joint">
+    <implicitSpringDamper>true</implicitSpringDamper>
+    <springStiffness>1350.0</springStiffness>
+    <dampingFactor>45.0</dampingFactor>
+  </gazebo>
+
+  <link name="camera_suspension_spring">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="${mesh_pkg}/camera_suspension_spring.dae"/></geometry>
+      <material name="signal_yellow"/>
+    </visual>
+  </link>
+  <joint name="camera_suspension_spring_joint" type="fixed">
+    <parent link="camera_suspension_piston"/>
+    <child link="camera_suspension_spring"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ============================ ROVER PAN-TILT CAMERA HEAD ============ -->
+  <link name="camera_gimbal_head">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="${mesh_pkg}/camera_gimbal_head.dae"/></geometry>
+      <material name="matte_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0.02 0 0.035" rpy="0 0 0"/>
+      <geometry><box size="0.06 0.05 0.05"/></geometry>
+    </collision>
+    <xacro:box_inertia mass="0.18" x="0.06" y="0.05" z="0.05"/>
+  </link>
+
+  <joint name="camera_pan_joint" type="revolute">
+    <parent link="camera_suspension_piston"/>
+    <child link="camera_gimbal_head"/>
+    <origin xyz="0 0 0.23" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${-PI}" upper="${PI}" effort="2.5" velocity="2.5"/>
+    <dynamics damping="0.1"/>
+  </joint>
+
+  <link name="camera_link">
+    <visual>
+      <origin xyz="0.02 0 0" rpy="0 ${PI/2} 0"/>
+      <geometry><cylinder radius="0.020" length="0.055"/></geometry>
+      <material name="lens_glass"/>
+    </visual>
+    <collision>
+      <origin xyz="0.02 0 0" rpy="0 ${PI/2} 0"/>
+      <geometry><cylinder radius="0.020" length="0.055"/></geometry>
+    </collision>
+    <xacro:cylinder_inertia mass="0.06" r="0.020" h="0.055"/>
+  </link>
+
+  <joint name="camera_joint" type="fixed">
+    <parent link="camera_gimbal_head"/>
+    <child link="camera_link"/>
+    <origin xyz="0.02 0 0.035" rpy="0 0 0"/>
+  </joint>
+
+  <link name="camera_imu_link">
+    <visual><geometry><box size="0.018 0.018 0.008"/></geometry><material name="signal_yellow"/></visual>
+    <collision><geometry><box size="0.018 0.018 0.008"/></geometry></collision>
+    <xacro:box_inertia mass="0.01" x="0.018" y="0.018" z="0.008"/>
+  </link>
+  <joint name="camera_imu_joint" type="fixed">
+    <parent link="camera_gimbal_head"/>
+    <child link="camera_imu_link"/>
+    <origin xyz="0.01 0 0.060" rpy="0 0 0"/>
+  </joint>
+
+  <gazebo reference="camera_imu_link">
+    <sensor type="imu" name="camera_imu_sensor">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <topic>/camera/imu/data</topic>
+      <gz_frame_id>camera_imu_link</gz_frame_id>
+      <plugin name="camera_imu_plugin" filename="libgazebo_ros_imu_sensor.so">
+        <ros><remapping>~/out:=camera/imu/data</remapping></ros>
+        <frame_name>camera_imu_link</frame_name>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- Optical frame (REP-103) -->
+  <link name="camera_optical_frame"/>
+  <joint name="camera_optical_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="camera_optical_frame"/>
+    <origin xyz="0.03 0 0" rpy="${-PI/2} 0 ${-PI/2}"/>
+  </joint>
+
+  <gazebo reference="camera_link">
+    <sensor type="rgbd_camera" name="rover_camera">
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <camera name="head">
+        <horizontal_fov>1.4</horizontal_fov>
+        <image>
+          <width>1280</width>
+          <height>720</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.05</near>
+          <far>100.0</far>
+        </clip>
+        <depth_camera>
+          <clip>
+            <near>0.1</near>
+            <far>25.0</far>
+          </clip>
+        </depth_camera>
+      </camera>
+      <topic>/camera</topic>
+      <gz_frame_id>camera_optical_frame</gz_frame_id>
+      <plugin name="camera_plugin" filename="libgazebo_ros_camera.so">
+        <ros>
+          <namespace>/ugv</namespace>
+          <remapping>image_raw:=camera/image_raw</remapping>
+          <remapping>camera_info:=camera/camera_info</remapping>
+        </ros>
+        <frame_name>camera_optical_frame</frame_name>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- Transmissions -->
+  <transmission name="camera_pan_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="camera_pan_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="camera_pan_motor">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <gazebo reference="imu_link">
+    <sensor type="imu" name="imu_sensor">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <topic>/imu/data</topic>
+      <gz_frame_id>imu_link</gz_frame_id>
+      <plugin name="imu_plugin" filename="libgazebo_ros_imu_sensor.so">
+        <ros><remapping>~/out:=imu/data</remapping></ros>
+        <frame_name>imu_link</frame_name>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- ============================ 4-SPROCKET SKID-STEER DRIVE ============= -->
+  <gazebo>
+    <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
+      <left_joint>left_front_sprocket_joint</left_joint>
+      <left_joint>left_rear_sprocket_joint</left_joint>
+      <right_joint>right_front_sprocket_joint</right_joint>
+      <right_joint>right_rear_sprocket_joint</right_joint>
+      <wheel_separation>${track_separation}</wheel_separation>
+      <wheel_radius>${sprocket_radius}</wheel_radius>
+      <max_linear_acceleration>3.5</max_linear_acceleration>
+      <max_angular_acceleration>4.0</max_angular_acceleration>
+      <max_linear_velocity>2.0</max_linear_velocity>
+      <min_linear_velocity>-2.0</min_linear_velocity>
+      <max_angular_velocity>2.5</max_angular_velocity>
+      <min_angular_velocity>-2.5</min_angular_velocity>
+      <topic>/cmd_vel</topic>
+      <odom_topic>/odom</odom_topic>
+      <frame_id>odom</frame_id>
+      <child_frame_id>base_footprint</child_frame_id>
+      <odom_publish_frequency>50</odom_publish_frequency>
+    </plugin>
+
+    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+      <topic>/joint_states</topic>
+      <update_rate>30</update_rate>
+    </plugin>
+
+    <plugin name="skid_steer_drive" filename="libgazebo_ros_diff_drive.so">
+      <ros><namespace>/ugv</namespace></ros>
+      <update_rate>50</update_rate>
+      <num_wheel_pairs>2</num_wheel_pairs>
+      <left_joint>left_front_sprocket_joint</left_joint>
+      <right_joint>right_front_sprocket_joint</right_joint>
+      <left_joint>left_rear_sprocket_joint</left_joint>
+      <right_joint>right_rear_sprocket_joint</right_joint>
+      <wheel_separation>${track_separation}</wheel_separation>
+      <wheel_separation>${track_separation}</wheel_separation>
+      <wheel_diameter>${2*sprocket_radius}</wheel_diameter>
+      <wheel_diameter>${2*sprocket_radius}</wheel_diameter>
+      <max_wheel_torque>28</max_wheel_torque>
+      <max_wheel_acceleration>2.5</max_wheel_acceleration>
+      <command_topic>cmd_vel</command_topic>
+      <odometry_topic>odom</odometry_topic>
+      <odometry_frame>odom</odometry_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+      <publish_odom>true</publish_odom>
+      <publish_odom_tf>true</publish_odom_tf>
+      <publish_wheel_tf>true</publish_wheel_tf>
+    </plugin>
+  </gazebo>
+
+</robot>

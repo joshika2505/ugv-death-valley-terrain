@@ -670,13 +670,24 @@ class NavigationManagerNode(Node):
                     except Exception:
                         pass
                 elif self.path.startswith('/api/camera_frame'):
-                    if node_ref.latest_camera_jpg:
+                    frame_data = node_ref.latest_camera_jpg
+                    if not frame_data:
+                        try:
+                            import cv2, numpy as np
+                            placeholder = np.zeros((360, 640, 3), dtype=np.uint8)
+                            cv2.putText(placeholder, "UGV BELT DRIVE CAMERA INITIALIZING...", (60, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 210, 255), 2)
+                            _, enc = cv2.imencode('.jpg', placeholder)
+                            frame_data = enc.tobytes()
+                        except Exception:
+                            frame_data = None
+
+                    if frame_data:
                         self.send_response(200)
                         self.send_header('Content-Type', 'image/jpeg')
-                        self.send_header('Content-Length', str(len(node_ref.latest_camera_jpg)))
+                        self.send_header('Content-Length', str(len(frame_data)))
                         self.send_header('Access-Control-Allow-Origin', '*')
                         self.end_headers()
-                        self.wfile.write(node_ref.latest_camera_jpg)
+                        self.wfile.write(frame_data)
                     else:
                         self.send_response(404)
                         self.end_headers()

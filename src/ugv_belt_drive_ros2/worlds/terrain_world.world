@@ -1,0 +1,81 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="terrain_world">
+    <!-- Directional Sun Light -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- Ground Plane -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <!-- Obstacle Ramp 1 (Green Box Bumper Ramp) -->
+    <model name="ramp_1">
+      <static>true</static>
+      <pose>2.5 0 0.25 0 0.2 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>2.0 1.5 0.5</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>2.0 1.5 0.5</size></box></geometry>
+          <material>
+            <ambient>0.2 0.8 0.2 1</ambient>
+            <diffuse>0.2 0.8 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Obstacle Ramp 2 (Red Box Slope) -->
+    <model name="ramp_2">
+      <static>true</static>
+      <pose>5.0 1.5 0.5 0.1 -0.2 0.5</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>2.5 2.0 1.0</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>2.5 2.0 1.0</size></box></geometry>
+          <material>
+            <ambient>0.9 0.2 0.2 1</ambient>
+            <diffuse>0.9 0.2 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Camera Vision Test Pillars -->
+    <model name="pillar_blue">
+      <static>true</static>
+      <pose>3.0 -2.0 0.75 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><cylinder><radius>0.25</radius><length>1.5</length></cylinder></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.25</radius><length>1.5</length></cylinder></geometry>
+          <material>
+            <ambient>0.1 0.3 0.9 1</ambient>
+            <diffuse>0.1 0.3 0.9 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Physics settings -->
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+
+    <scene>
+      <ambient>0.5 0.5 0.5 1.0</ambient>
+      <background>0.7 0.8 0.9 1.0</background>
+      <shadows>true</shadows>
+    </scene>
+  </world>
+</sdf>

@@ -7,8 +7,8 @@ from launch_ros.parameter_descriptions import ParameterValue
 
 def generate_launch_description():
     try:
-        pkg_path = get_package_share_directory('sih_bot')
-        xacro_file = os.path.join(pkg_path, 'urdf', 'sih_bot.urdf.xacro')
+        pkg_path = get_package_share_directory('ugv_belt_drive_ros2')
+        xacro_file = os.path.join(pkg_path, 'urdf', 'ugv_belt_drive_robot.urdf.xacro')
     except Exception:
         pkg_path = get_package_share_directory('sih_bot')
         xacro_file = os.path.join(pkg_path, 'urdf', 'sih_bot.urdf.xacro')

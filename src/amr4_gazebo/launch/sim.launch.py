@@ -21,13 +21,21 @@ def generate_launch_description():
     bridge_config = os.path.join(pkg_amr4_gazebo, 'config', 'ros_gz_bridge.yaml')
 
     try:
+        pkg_ugv_belt = get_package_share_directory('ugv_belt_drive_ros2')
+    except Exception:
+        pkg_ugv_belt = pkg_amr4_description
+
+    try:
         pkg_sih_bot = get_package_share_directory('sih_bot')
     except Exception:
         pkg_sih_bot = pkg_amr4_description
 
-    share_dir = os.path.dirname(pkg_sih_bot)
+    share_dir = os.path.dirname(pkg_ugv_belt)
     gz_paths = ':'.join([
         share_dir,
+        pkg_ugv_belt,
+        os.path.join(pkg_ugv_belt, 'models'),
+        os.path.join(pkg_ugv_belt, 'meshes'),
         pkg_sih_bot,
         os.path.dirname(pkg_sih_bot),
         pkg_amr4_description,

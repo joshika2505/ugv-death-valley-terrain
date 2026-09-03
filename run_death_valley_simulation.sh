@@ -54,7 +54,7 @@ case "$MODE" in
                 pkill -9 -f ros2; pkill -9 -f gz; pkill -9 -f rviz; pkill -9 -f parameter_bridge; pkill -9 -f python3 || true; sleep 1;
                 source /opt/ros/jazzy/setup.bash && \
                 cd $WORKSPACE_DIR && \
-                colcon build --symlink-install --packages-select death_valley_world amr4_description amr4_gazebo amr4_navigation amr4_autonomy amr4_bringup sih_bot autonomous_ugv_nav sih_perception && \
+                colcon build --symlink-install --packages-select death_valley_world amr4_description amr4_gazebo amr4_navigation amr4_autonomy amr4_bringup sih_bot autonomous_ugv_nav sih_perception ugv_belt_drive_ros2 && \
                 source $WORKSPACE_DIR/install/setup.bash && \
                 ros2 launch amr4_bringup death_valley_autonomous.launch.py start_x:=$START_X start_y:=$START_Y goal_x:=$GOAL_X goal_y:=$GOAL_Y"
         ;;
