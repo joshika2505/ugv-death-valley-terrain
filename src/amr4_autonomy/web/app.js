@@ -226,42 +226,94 @@ document.getElementById('btnApplyCoords').onclick = () => {
             body: JSON.stringify({x: bx, y: by})
         })
     ]).then(() => {
-        return fetch('/api/plan_path', {method: 'POST'});
+        return fetch('/api/plan_path', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: '{}'
+        });
     }).then(() => fetchStatus());
 };
 
 document.getElementById('btnPlan').onclick = () => {
-    fetch('/api/plan_path', {method: 'POST'}).then(() => fetchStatus());
+    fetch('/api/plan_path', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: '{}'
+    }).then(() => fetchStatus());
 };
 
 document.getElementById('btnAltPlan').onclick = () => {
-    fetch('/api/plan_alternative_path', {method: 'POST'}).then(() => fetchStatus());
+    fetch('/api/plan_alternative_path', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: '{}'
+    }).then(() => fetchStatus());
 };
 
 const quickAltBtn = document.getElementById('btnQuickAlt');
 if (quickAltBtn) {
     quickAltBtn.onclick = () => {
-        fetch('/api/plan_alternative_path', {method: 'POST'})
-            .then(() => fetch('/api/start_navigation', {method: 'POST'}))
-            .then(() => fetchStatus());
+        fetch('/api/plan_alternative_path', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: '{}'
+        })
+        .then(() => fetch('/api/start_navigation', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: '{}'
+        }))
+        .then(() => fetchStatus());
     };
 }
 
 document.getElementById('btnStart').onclick = () => {
-    fetch('/api/start_navigation', {method: 'POST'}).then(() => fetchStatus());
+    fetch('/api/start_navigation', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: '{}'
+    }).then(() => fetchStatus());
 };
 
 document.getElementById('btnStop').onclick = () => {
-    fetch('/api/stop', {method: 'POST'}).then(() => fetchStatus());
+    fetch('/api/stop', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: '{}'
+    }).then(() => fetchStatus());
 };
 
 document.getElementById('btnReset').onclick = () => {
-    fetch('/api/reset', {method: 'POST'}).then(() => fetchStatus());
+    fetch('/api/reset', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: '{}'
+    }).then(() => fetchStatus());
 };
 
 document.getElementById('btnRecover').onclick = () => {
-    fetch('/api/recover_robot', {method: 'POST'}).then(() => fetchStatus());
+    fetch('/api/recover_robot', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: '{}'
+    }).then(() => fetchStatus());
 };
+
+// Continuous Camera Frame Updater
+const camImg = document.getElementById('robotCamera');
+let lastCamUpdate = 0;
+function updateCameraFeed() {
+    const now = Date.now();
+    if (now - lastCamUpdate > 100) {
+        lastCamUpdate = now;
+        const tempImg = new Image();
+        tempImg.onload = () => {
+            if (camImg) camImg.src = tempImg.src;
+        };
+        tempImg.src = '/api/camera_frame?t=' + now;
+    }
+}
+setInterval(updateCameraFeed, 120);
 
 function fetchStatus() {
     fetch('/api/status')
