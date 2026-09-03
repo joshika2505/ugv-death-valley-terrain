@@ -95,6 +95,10 @@ class DeathValleyTerrainAnalyzer:
         w /= np.sum(w)
         return float(np.sum(self.vertices[idxs, 2] * w))
 
+    def get_height(self, x, y):
+        """Alias for get_surface_elevation."""
+        return self.get_surface_elevation(x, y)
+
     def get_terrain_properties(self, x, y):
         """Returns (elevation, slope_deg, roughness, traversability_class, surface_normal)."""
         gx = int(round((np.clip(x, self.min_x, self.max_x) - self.min_x) / self.resolution))

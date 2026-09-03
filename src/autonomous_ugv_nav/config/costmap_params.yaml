@@ -1,0 +1,13 @@
+semantic_costmap_node:
+  ros__parameters:
+    resolution: 0.10
+    grid_width_m: 20.0
+    grid_height_m: 20.0
+    robot_radius: 0.35
+    inflation_radius: 0.70
+    max_slope_deg: 25.0
+    max_roughness_m: 0.08
+    ground_clearance: 0.15
+    frame_id: "odom"
+    pointcloud_topic: "/oak/points"
+    costmap_topic: "/ugv/semantic_costmap"

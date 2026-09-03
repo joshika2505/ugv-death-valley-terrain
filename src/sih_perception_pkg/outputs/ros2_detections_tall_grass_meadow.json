@@ -1,0 +1,309 @@
+{
+  "timestamp": 1788110702.063856,
+  "ground_plane": {
+    "equation": "0.009x + -0.027y + 1.000z + -0.299 = 0",
+    "slope_deg": 1.61,
+    "inlier_ratio": 0.647
+  },
+  "num_obstacles_detected": 9,
+  "obstacles": [
+    {
+      "id": 9,
+      "centroid_x": 0.4969046115875244,
+      "centroid_y": -0.00034865993075072765,
+      "centroid_z": 0.2617461681365967,
+      "radial_distance_m": 0.49690473390851875,
+      "azimuth_deg": -0.04020236233091649,
+      "length_m": 0.04466038942337036,
+      "width_m": 0.02482335828244686,
+      "height_m": 0.03790253400802612,
+      "bbox_2d": [
+        303,
+        408,
+        338,
+        422
+      ],
+      "bbox_3d": [
+        0.4734928607940674,
+        0.5181532502174377,
+        -0.01241265144199133,
+        0.012410706840455532,
+        0.2568371295928955,
+        0.26504018902778625
+      ],
+      "is_run_over_allowed": true,
+      "traversability_type": 1,
+      "traversability_name": "Traversable (Run-Over Allowed)",
+      "semantic_class": 1,
+      "semantic_name": "Soft Traversable (Grass/Brush)",
+      "severity_cost": 15,
+      "num_points": 326
+    },
+    {
+      "id": 8,
+      "centroid_x": 0.48865336179733276,
+      "centroid_y": 0.19432184100151062,
+      "centroid_z": 0.2646993100643158,
+      "radial_distance_m": 0.5258736406077522,
+      "azimuth_deg": 21.68613630616989,
+      "length_m": 0.06937116384506226,
+      "width_m": 0.05292774736881256,
+      "height_m": 0.044330984354019165,
+      "bbox_2d": [
+        17,
+        406,
+        84,
+        425
+      ],
+      "bbox_3d": [
+        0.4502665400505066,
+        0.5196377038955688,
+        0.16150538623332977,
+        0.21443313360214233,
+        0.25602447986602783,
+        0.27028343081474304
+      ],
+      "is_run_over_allowed": true,
+      "traversability_type": 1,
+      "traversability_name": "Traversable (Run-Over Allowed)",
+      "semantic_class": 1,
+      "semantic_name": "Soft Traversable (Grass/Brush)",
+      "severity_cost": 15,
+      "num_points": 837
+    },
+    {
+      "id": 7,
+      "centroid_x": 0.5904449224472046,
+      "centroid_y": 0.0981317088007927,
+      "centroid_z": 0.26323628425598145,
+      "radial_distance_m": 0.5985440992239829,
+      "azimuth_deg": 9.436282450803777,
+      "length_m": 0.05448204278945923,
+      "width_m": 0.033947668969631195,
+      "height_m": 0.038666605949401855,
+      "bbox_2d": [
+        203,
+        379,
+        238,
+        388
+      ],
+      "bbox_3d": [
+        0.5573474764823914,
+        0.6118295192718506,
+        0.07836028933525085,
+        0.11230795830488205,
+        0.2577783167362213,
+        0.2670174837112427
+      ],
+      "is_run_over_allowed": true,
+      "traversability_type": 1,
+      "traversability_name": "Traversable (Run-Over Allowed)",
+      "semantic_class": 1,
+      "semantic_name": "Soft Traversable (Grass/Brush)",
+      "severity_cost": 15,
+      "num_points": 243
+    },
+    {
+      "id": 6,
+      "centroid_x": 0.5821043848991394,
+      "centroid_y": 0.28760433197021484,
+      "centroid_z": 0.2649259567260742,
+      "radial_distance_m": 0.6492778809468555,
+      "azimuth_deg": 26.292913712495857,
+      "length_m": 0.0760619044303894,
+      "width_m": 0.06799301505088806,
+      "height_m": 0.04406890273094177,
+      "bbox_2d": [
+        0,
+        378,
+        48,
+        389
+      ],
+      "bbox_3d": [
+        0.5375984907150269,
+        0.6136603951454163,
+        0.24639007449150085,
+        0.3143830895423889,
+        0.2578795254230499,
+        0.2718793749809265
+      ],
+      "is_run_over_allowed": true,
+      "traversability_type": 1,
+      "traversability_name": "Traversable (Run-Over Allowed)",
+      "semantic_class": 1,
+      "semantic_name": "Soft Traversable (Grass/Brush)",
+      "severity_cost": 15,
+      "num_points": 376
+    },
+    {
+      "id": 5,
+      "centroid_x": 0.683276891708374,
+      "centroid_y": 0.19532647728919983,
+      "centroid_z": 0.26386529207229614,
+      "radial_distance_m": 0.7106474115008549,
+      "azimuth_deg": 15.953497654911027,
+      "length_m": 0.06788754463195801,
+      "width_m": 0.041641056537628174,
+      "height_m": 0.03995499014854431,
+      "bbox_2d": [
+        146,
+        362,
+        177,
+        368
+      ],
+      "bbox_3d": [
+        0.6449699997901917,
+        0.7128575444221497,
+        0.1695275455713272,
+        0.21116860210895538,
+        0.25859516859054565,
+        0.26849785447120667
+      ],
+      "is_run_over_allowed": true,
+      "traversability_type": 1,
+      "traversability_name": "Traversable (Run-Over Allowed)",
+      "semantic_class": 1,
+      "semantic_name": "Soft Traversable (Grass/Brush)",
+      "severity_cost": 15,
+      "num_points": 152
+    },
+    {
+      "id": 4,
+      "centroid_x": 0.6781154870986938,
+      "centroid_y": 0.3737837076187134,
+      "centroid_z": 0.2654794454574585,
+      "radial_distance_m": 0.7743092882849144,
+      "azimuth_deg": 28.863971948550507,
+      "length_m": 0.0916450023651123,
+      "width_m": 0.08582848310470581,
+      "height_m": 0.04580804705619812,
+      "bbox_2d": [
+        0,
+        361,
+        26,
+        368
+      ],
+      "bbox_3d": [
+        0.6252828240394592,
+        0.7169278264045715,
+        0.32791411876678467,
+        0.4137426018714905,
+        0.2581787407398224,
+        0.27287110686302185
+      ],
+      "is_run_over_allowed": true,
+      "traversability_type": 1,
+      "traversability_name": "Traversable (Run-Over Allowed)",
+      "semantic_class": 1,
+      "semantic_name": "Soft Traversable (Grass/Brush)",
+      "severity_cost": 15,
+      "num_points": 140
+    },
+    {
+      "id": 3,
+      "centroid_x": 0.7783328890800476,
+      "centroid_y": 0.29217618703842163,
+      "centroid_z": 0.26451778411865234,
+      "radial_distance_m": 0.8313657501340818,
+      "azimuth_deg": 20.57549145329362,
+      "length_m": 0.08070850372314453,
+      "width_m": 0.05581331253051758,
+      "height_m": 0.04090195894241333,
+      "bbox_2d": [
+        110,
+        351,
+        136,
+        355
+      ],
+      "bbox_3d": [
+        0.7313666343688965,
+        0.812075138092041,
+        0.2528162896633148,
+        0.3086296021938324,
+        0.2593744099140167,
+        0.2700958847999573
+      ],
+      "is_run_over_allowed": true,
+      "traversability_type": 1,
+      "traversability_name": "Traversable (Run-Over Allowed)",
+      "semantic_class": 1,
+      "semantic_name": "Soft Traversable (Grass/Brush)",
+      "severity_cost": 15,
+      "num_points": 92
+    },
+    {
+      "id": 1,
+      "centroid_x": 1.0732996463775635,
+      "centroid_y": 0.0009449312346987426,
+      "centroid_z": -1.1727213859558105e-05,
+      "radial_distance_m": 1.0733000623354314,
+      "azimuth_deg": 0.050443096550824025,
+      "length_m": 0.2483251690864563,
+      "width_m": 1.5684599876403809,
+      "height_m": 0.3143695890903473,
+      "bbox_2d": [
+        0,
+        437,
+        640,
+        480
+      ],
+      "bbox_3d": [
+        0.9612357020378113,
+        1.2095608711242676,
+        -0.7823485136032104,
+        0.7861114740371704,
+        -0.010592520236968994,
+        0.008450984954833984
+      ],
+      "is_run_over_allowed": false,
+      "traversability_type": 3,
+      "traversability_name": "Negative Hazard (Ditch/Hole)",
+      "semantic_class": 0,
+      "semantic_name": "Free Drivable (Soil/Pavement)",
+      "severity_cost": 255,
+      "num_points": 27520
+    },
+    {
+      "id": 2,
+      "centroid_x": 2.1665008068084717,
+      "centroid_y": -0.9030148386955261,
+      "centroid_z": 0.30097854137420654,
+      "radial_distance_m": 2.347160315105482,
+      "azimuth_deg": -22.626763838695453,
+      "length_m": 5.94535094499588,
+      "width_m": 4.926780486479402,
+      "height_m": 0.1510811448097229,
+      "bbox_2d": [
+        329,
+        298,
+        640,
+        316
+      ],
+      "bbox_3d": [
+        0.41968172788619995,
+        6.36503267288208,
+        -4.957441806793213,
+        -0.030661320313811302,
+        0.26126548647880554,
+        0.3398585617542267
+      ],
+      "is_run_over_allowed": true,
+      "traversability_type": 1,
+      "traversability_name": "Traversable (Run-Over Allowed)",
+      "semantic_class": 1,
+      "semantic_name": "Soft Traversable (Grass/Brush)",
+      "severity_cost": 15,
+      "num_points": 2803
+    }
+  ],
+  "latency_ms": {
+    "back_projection": 8.88,
+    "ground_plane": 6.04,
+    "segmentation": 6.26,
+    "traversability": 7.1,
+    "costmap": 10.58,
+    "detection": 15.82,
+    "total": 54.68,
+    "fps": 18.3
+  }
+}

@@ -83,6 +83,21 @@ def generate_launch_description():
         output='screen'
     )
 
+    try:
+        pkg_ugv_nav = get_package_share_directory('autonomous_ugv_nav')
+        renz_ugv_nav = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(pkg_ugv_nav, 'launch', 'ugv_navigation.launch.py')
+            ),
+            launch_arguments={
+                'use_sim_time': 'true',
+                'pointcloud_topic': '/scan'
+            }.items()
+        )
+        renz_action = [TimerAction(period=3.5, actions=[renz_ugv_nav])]
+    except Exception:
+        renz_action = []
+
     return LaunchDescription([
         DeclareLaunchArgument('start_x', default_value='0.0', description='Point A X coordinate (Start)'),
         DeclareLaunchArgument('start_y', default_value='0.0', description='Point A Y coordinate (Start)'),
@@ -99,4 +114,4 @@ def generate_launch_description():
         TimerAction(period=2.0, actions=[autonomy_node]),
         TimerAction(period=3.0, actions=[nav_bringup]),
         TimerAction(period=5.0, actions=[rviz_node, perception_node])
-    ])
+    ] + renz_action)

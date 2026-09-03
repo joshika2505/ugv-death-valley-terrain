@@ -1,0 +1,85 @@
+{
+  "timestamp": 1788110702.5465298,
+  "ground_plane": {
+    "equation": "-0.088x + 0.005y + 0.996z + 0.117 = 0",
+    "slope_deg": 5.05,
+    "inlier_ratio": 0.582
+  },
+  "num_obstacles_detected": 2,
+  "obstacles": [
+    {
+      "id": 2,
+      "centroid_x": 1.9710711240768433,
+      "centroid_y": 0.004632823169231415,
+      "centroid_z": 0.1539052426815033,
+      "radial_distance_m": 1.971076568583795,
+      "azimuth_deg": 0.13466826375949026,
+      "length_m": 0.15818476676940918,
+      "width_m": 3.0302529335021973,
+      "height_m": 0.14997337758541107,
+      "bbox_2d": [
+        0,
+        321,
+        640,
+        354
+      ],
+      "bbox_3d": [
+        1.8943614959716797,
+        2.052546262741089,
+        -1.5165984630584717,
+        1.5136544704437256,
+        0.09352973103523254,
+        0.2197943925857544
+      ],
+      "is_run_over_allowed": true,
+      "traversability_type": 1,
+      "traversability_name": "Traversable (Run-Over Allowed)",
+      "semantic_class": 0,
+      "semantic_name": "Free Drivable (Soil/Pavement)",
+      "severity_cost": 10,
+      "num_points": 17747
+    },
+    {
+      "id": 1,
+      "centroid_x": 2.9660682678222656,
+      "centroid_y": 0.013017120771110058,
+      "centroid_z": 1.0479605197906494,
+      "radial_distance_m": 2.9660968316653697,
+      "azimuth_deg": 0.2514511555297344,
+      "length_m": 4.902818202972412,
+      "width_m": 9.825833320617676,
+      "height_m": 4.1178507804870605,
+      "bbox_2d": [
+        0,
+        68,
+        640,
+        326
+      ],
+      "bbox_3d": [
+        2.016213893890381,
+        6.919032096862793,
+        -4.9038591384887695,
+        4.921974182128906,
+        0.20298919081687927,
+        4.606301784515381
+      ],
+      "is_run_over_allowed": false,
+      "traversability_type": 2,
+      "traversability_name": "Lethal Obstacle (Avoid)",
+      "semantic_class": 0,
+      "semantic_name": "Free Drivable (Soil/Pavement)",
+      "severity_cost": 254,
+      "num_points": 158950
+    }
+  ],
+  "latency_ms": {
+    "back_projection": 5.51,
+    "ground_plane": 12.08,
+    "segmentation": 5.63,
+    "traversability": 10.67,
+    "costmap": 26.93,
+    "detection": 18.95,
+    "total": 79.78,
+    "fps": 12.5
+  }
+}

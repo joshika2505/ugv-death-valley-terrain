@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tracked UGV Perception & Traversability Engine | SIH Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #070a12;
+      --bg-card: rgba(16, 23, 38, 0.75);
+      --bg-card-hover: rgba(23, 33, 54, 0.85);
+      --border-color: rgba(56, 189, 248, 0.15);
+      --border-focus: rgba(56, 189, 248, 0.5);
+      --accent-cyan: #38bdf8;
+      --accent-blue: #3b82f6;
+      --accent-emerald: #10b981;
+      --accent-red: #ef4444;
+      --accent-purple: #a855f7;
+      --accent-amber: #f59e0b;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.08) 0%, transparent 40%),
+        linear-gradient(to bottom, rgba(10, 15, 29, 0.8), rgba(7, 10, 18, 0.95));
+      background-attachment: fixed;
+    }
+
+    /* Header */
+    header {
+      padding: 1rem 2rem;
+      background: rgba(10, 15, 29, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand-container {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.3rem;
+      color: #fff;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+    }
+
+    .brand-text h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #fff, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p {
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      font-family: 'JetBrains Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .header-badges {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .badge-pill {
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(16, 23, 38, 0.8);
+      border: 1px solid var(--border-color);
+    }
+
+    .dot-live {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--accent-emerald);
+      box-shadow: 0 0 10px var(--accent-emerald);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Main Container */
+    main {
+      padding: 1.5rem 2rem;
+      max-width: 1750px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Scenario Bar */
+    .scenario-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      padding: 0.75rem 1.25rem;
+      border-radius: 14px;
+      border: 1px solid var(--border-color);
+      flex-wrap: wrap;
+    }
+
+    .scenario-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .scenario-buttons {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-scenario {
+      background: rgba(30, 41, 59, 0.6);
+      color: var(--text-main);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 0.55rem 1.1rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-scenario:hover {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: var(--accent-cyan);
+      transform: translateY(-2px);
+    }
+
+    .btn-scenario.active {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(59, 130, 246, 0.3));
+      border-color: var(--accent-cyan);
+      color: #fff;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+    }
+
+    /* Grid Layout for Panels */
+    .visual-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 1200px) {
+      .visual-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      transition: border-color 0.3s ease;
+    }
+
+    .panel-card:hover {
+      border-color: var(--border-focus);
+    }
+
+    .panel-header {
+      padding: 0.85rem 1.25rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      letter-spacing: -0.01em;
+    }
+
+    .panel-tag {
+      font-size: 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+    }
+
+    .panel-body {
+      position: relative;
+      background: #000;
+      min-height: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .panel-img {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: contain;
+    }
+
+    .panel-footer {
+      padding: 0.75rem 1.25rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Deck Layout */
+    .deck-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr 340px;
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 1300px) {
+      .deck-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Sliders / Clearance Tuning */
+    .control-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: #fff;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.6rem;
+    }
+
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .slider-val {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent-cyan);
+      font-weight: 700;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--accent-cyan);
+      transition: transform 0.1s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    /* Obstacle Table Card */
+    .table-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.25rem;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      text-align: left;
+    }
+
+    th {
+      padding: 0.6rem 0.8rem;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    td {
+      padding: 0.65rem 0.8rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .pill-action {
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      display: inline-block;
+    }
+
+    .pill-runover {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .pill-avoid {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .pill-ditch {
+      background: rgba(168, 85, 247, 0.2);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.4);
+    }
+
+    /* Telemetry HUD */
+    .telemetry-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .metric-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .metric-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #fff;
+    }
+
+    .stage-bar-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .stage-bar-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-dim);
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-emerald));
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+
+    /* OpenMap / Architecture Tabs */
+    .tab-section {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+    }
+
+    .tabs-header {
+      display: flex;
+      gap: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.8rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      color: var(--accent-cyan);
+      background: rgba(56, 189, 248, 0.12);
+    }
+
+    .tab-pane {
+      display: none;
+      line-height: 1.6;
+      font-size: 0.88rem;
+      color: #cbd5e1;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.2rem;
+      margin-top: 1rem;
+    }
+
+    .concept-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 1.2rem;
+    }
+
+    .concept-box h3 {
+      font-size: 0.95rem;
+      color: #fff;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    pre code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      background: #000;
+      padding: 0.8rem;
+      border-radius: 8px;
+      display: block;
+      overflow-x: auto;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #38bdf8;
+      margin-top: 0.6rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand-container">
+      <div class="brand-logo">SIH</div>
+      <div class="brand-text">
+        <h1>Tracked UGV 3D Vision & Traversability Engine</h1>
+        <p>Real-Time Stereo RGB-D Perception • Clearance Classification</p>
+      </div>
+    </div>
+    <div class="header-badges">
+      <div class="badge-pill">
+        <div class="dot-live"></div>
+        <span>STEREO SENSOR LIVE</span>
+      </div>
+      <div class="badge-pill" style="color: var(--accent-cyan);">
+        <span>JETSON ORIN TARGET</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main>
+
+    <!-- Scenario Selector Bar -->
+    <div class="scenario-bar">
+      <span class="scenario-label">Scenario Presets:</span>
+      <div class="scenario-buttons">
+        <button class="btn-scenario active" data-scenario="rock">Lethal Boulder (25cm)</button>
+        <button class="btn-scenario" data-scenario="grass">Tall Grass Meadow (30cm)</button>
+        <button class="btn-scenario" data-scenario="ditch">Negative Ditch (20cm)</button>
+        <button class="btn-scenario" data-scenario="debris">Low Debris (5cm)</button>
+        <button class="btn-scenario" data-scenario="slope">Steep Incline (42°)</button>
+        <button class="btn-scenario" data-scenario="custom">Custom Dynamic</button>
+      </div>
+    </div>
+
+    <!-- Live Multi-View Vision Grid -->
+    <div class="visual-grid">
+      
+      <!-- Panel 1: RGB + 3D Detection -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>[Camera]</span>
+            <span>RGB Stream + Semantic Overlay + 3D Bounding Boxes</span>
+          </div>
+          <div class="panel-tag">640x480 RGB</div>
+        </div>
+        <div class="panel-body">
+          <img id="img-rgb" class="panel-img" src="" alt="RGB Stream">
+        </div>
+        <div class="panel-footer">
+          <span>Overlaid: 4-Class Taxonomy & Clearance Badges</span>
+          <span id="txt-num-obs" style="color: var(--accent-cyan); font-weight: 700;">0 Obstacles</span>
+        </div>
+      </div>
+
+      <!-- Panel 2: Metric Depth Map -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>[Depth]</span>
+            <span>Metric Stereo Depth Field (Turbo Colormap)</span>
+          </div>
+          <div class="panel-tag">0.2m - 10.0m</div>
+        </div>
+        <div class="panel-body">
+          <img id="img-depth" class="panel-img" src="" alt="Depth Map">
+        </div>
+        <div class="panel-footer">
+          <span>Range: 0.2m (Warm/Red) to 10.0m (Cool/Dark)</span>
+          <span id="txt-depth-stats" style="font-family: 'JetBrains Mono';">Hover for (X,Y,Z)</span>
+        </div>
+      </div>
+
+      <!-- Panel 3: 2.5D Local Costmap -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>[Costmap]</span>
+            <span>2.5D Top-Down Costmap (Track Footprint & Inflation)</span>
+          </div>
+          <div class="panel-tag">160x160 @ 5cm/cell</div>
+        </div>
+        <div class="panel-body">
+          <img id="img-costmap" class="panel-img" src="" alt="2.5D Costmap">
+        </div>
+        <div class="panel-footer">
+          <span>White = UGV (0.8x0.6m) | Rings = 1m, 2m, 3m, 5m</span>
+          <span style="color: var(--accent-emerald);">Green=Free | Red=Lethal</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Deck Layout: Controls, Table & Telemetry -->
+    <div class="deck-grid">
+      
+      <!-- Interactive Clearance & Physics Controls -->
+      <div class="control-card">
+        <div class="section-title">
+          <span>[Config]</span>
+          <span>Track Clearance & Physics</span>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Max Step Climb (H_step)</span>
+            <span id="val-climb" class="slider-val">15 cm</span>
+          </div>
+          <input type="range" id="slide-climb" min="5" max="35" value="15" step="1">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Ground Belly Clearance</span>
+            <span id="val-clearance" class="slider-val">10 cm</span>
+          </div>
+          <input type="range" id="slide-clearance" min="5" max="25" value="10" step="1">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Soft Vegetation Limit (Grass)</span>
+            <span id="val-soft" class="slider-val">40 cm</span>
+          </div>
+          <input type="range" id="slide-soft" min="15" max="60" value="40" step="1">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Camera Downward Pitch</span>
+            <span id="val-pitch" class="slider-val">-8.0°</span>
+          </div>
+          <input type="range" id="slide-pitch" min="-20" max="5" value="-8" step="1">
+        </div>
+
+        <div id="custom-controls" style="display: none; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 0.8rem; margin-top: 0.4rem;">
+          <div class="slider-group" style="margin-bottom: 0.8rem;">
+            <div class="slider-label">
+              <span>Obstacle Distance (Range)</span>
+              <span id="val-obs-dist" class="slider-val">2.8 m</span>
+            </div>
+            <input type="range" id="slide-obs-dist" min="10" max="60" value="28" step="1">
+          </div>
+          <div class="slider-group">
+            <div class="slider-label">
+              <span>Obstacle Height (Δh)</span>
+              <span id="val-obs-height" class="slider-val">25 cm</span>
+            </div>
+            <input type="range" id="slide-obs-height" min="5" max="50" value="25" step="1">
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Detected 3D Obstacles Table -->
+      <div class="table-card">
+        <div class="section-title" style="margin-bottom: 0.8rem;">
+          <span>[Targets]</span>
+          <span>Active 3D Spatial Detections & Clearance Verdicts</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Range</th>
+              <th>Bearing</th>
+              <th>Height (Δh)</th>
+              <th>Semantic Class</th>
+              <th>Clearance Action Verdict</th>
+              <th>Cost</th>
+            </tr>
+          </thead>
+          <tbody id="table-obstacles-body">
+            <!-- Dynamic Rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- System Telemetry & Pipeline Latency -->
+      <div class="telemetry-card">
+        <div class="section-title">
+          <span>[Telemetry]</span>
+          <span>Edge Pipeline Telemetry</span>
+        </div>
+
+        <div class="metric-row">
+          <span class="metric-label">Frame Throughput</span>
+          <span id="txt-fps" class="metric-val" style="color: var(--accent-emerald);">-- FPS</span>
+        </div>
+
+        <div class="metric-row">
+          <span class="metric-label">Total Pipeline Latency</span>
+          <span id="txt-latency" class="metric-val">-- ms</span>
+        </div>
+
+        <div class="metric-row">
+          <span class="metric-label">Ground Surface Slope</span>
+          <span id="txt-slope" class="metric-val" style="color: var(--accent-cyan);">--°</span>
+        </div>
+
+        <!-- Latency Stage Bars -->
+        <div class="stage-bar-container" style="margin-top: 0.4rem;">
+          <div class="stage-bar-info">
+            <span>3D Back-Projection</span>
+            <span id="t-backproj">-- ms</span>
+          </div>
+          <div class="progress-track"><div id="bar-backproj" class="progress-fill" style="width: 0%;"></div></div>
+        </div>
+
+        <div class="stage-bar-container">
+          <div class="stage-bar-info">
+            <span>RANSAC Ground Fit</span>
+            <span id="t-ground">-- ms</span>
+          </div>
+          <div class="progress-track"><div id="bar-ground" class="progress-fill" style="width: 0%;"></div></div>
+        </div>
+
+        <div class="stage-bar-container">
+          <div class="stage-bar-info">
+            <span>Semantic Segmentation</span>
+            <span id="t-seg">-- ms</span>
+          </div>
+          <div class="progress-track"><div id="bar-seg" class="progress-fill" style="width: 0%;"></div></div>
+        </div>
+
+        <div class="stage-bar-container">
+          <div class="stage-bar-info">
+            <span>Traversability Rules</span>
+            <span id="t-trav">-- ms</span>
+          </div>
+          <div class="progress-track"><div id="bar-trav" class="progress-fill" style="width: 0%;"></div></div>
+        </div>
+
+        <div class="stage-bar-container">
+          <div class="stage-bar-info">
+            <span>2.5D Costmap Generation</span>
+            <span id="t-cost">-- ms</span>
+          </div>
+          <div class="progress-track"><div id="bar-cost" class="progress-fill" style="width: 0%;"></div></div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Architectural Deep-Dive & OpenMap Integration Section -->
+    <div class="tab-section">
+      <div class="tabs-header">
+        <button class="tab-btn active" data-tab="tab-ml">Machine Learning & Hybrid Architecture</button>
+        <button class="tab-btn" data-tab="tab-openmap">OpenMap & Global Topo-Metric Integration</button>
+        <button class="tab-btn" data-tab="tab-ros2">Live ROS2 Nav2 / Vision Payload</button>
+      </div>
+
+      <!-- Tab 1: ML Model Deep Dive -->
+      <div id="tab-ml" class="tab-pane active">
+        <p><strong>Why Pure 2D Deep Learning (e.g. YOLOv8) Fails on Continuous-Track UGVs:</strong></p>
+        <div class="concept-grid">
+          <div class="concept-box">
+            <h3>[Limitation] The 2D Bounding Box Trap</h3>
+            <p>A standard 2D object detector detects a "rock", but has <em>zero awareness</em> of physical dimensions. It cannot tell whether the rock is 8 cm (safe for continuous tracks to crawl over) or 28 cm (fatal high-centering risk).</p>
+          </div>
+          <div class="concept-box">
+            <h3>[Limitation] The Pure Depth Blindspot</h3>
+            <p>Raw point clouds and depth maps detect a 20 cm vertical rise, but cannot identify material physics. It treats 20 cm of soft crushable vegetation identically to a 20 cm rigid concrete curb.</p>
+          </div>
+          <div class="concept-box">
+            <h3>[Solution] Hybrid Semantic + 3D Geometric Architecture</h3>
+            <p>Fuses <strong>PIDNet-S / MobileNetV4 Semantic Segmentation</strong> (material compliance) with <strong>Vectorized RANSAC 3D Ground Plane Fitting</strong> (exact metric clearance $\Delta h = Z_r - Z_{\text{ground}}$) to execute physics-informed traversability classification in sub-28ms.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: OpenMap Integration -->
+      <div id="tab-openmap" class="tab-pane">
+        <p><strong>OpenMap & OpenStreetMap (OSM) Integration in this UGV Architecture:</strong></p>
+        <div class="concept-grid">
+          <div class="concept-box">
+            <h3>1. Global-to-Local Hierarchy</h3>
+            <p><strong>OpenStreetMap (OSM) / OpenMap</strong> supplies the global topological route graph (GPS trail waypoints, road networks, satellite elevation priors). Our <strong>Stereo Perception Engine</strong> acts as the real-time ego-centric metric shield (0-10m) preventing collisions with dynamic off-road hazards.</p>
+          </div>
+          <div class="concept-box">
+            <h3>2. Open-Vocabulary 3D Semantics</h3>
+            <p>With vision-language embeddings (OpenMap/CLIP), natural language queries like <em>"Find a safe dirt trail avoiding high boulders"</em> are projected onto our 2.5D Traversability Costmap to select optimal navigation corridors.</p>
+          </div>
+          <div class="concept-box">
+            <h3>3. Geo-Referenced Costmap Anchoring</h3>
+            <p>Every local costmap cell $(g_x, g_y)$ is transformed via UGV Odometry/GPS into global WGS-84 coordinates: $\begin{bmatrix} \text{Lat} \\ \text{Lon} \end{bmatrix} = T_{\text{base}}^{\text{GPS}} \begin{bmatrix} X_r \\ Y_r \end{bmatrix}$.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: ROS2 Payloads -->
+      <div id="tab-ros2" class="tab-pane">
+        <p><strong>Real-Time Dispatched ROS2 Payloads (Nav2 & Vision Stack Compatible):</strong></p>
+        <pre><code id="code-ros2">// Sample Output from /perception/detected_obstacles & /perception/traversability_grid
+{
+  "topic": "/perception/detected_obstacles",
+  "type": "vision_msgs/msg/Detection3DArray",
+  "stamp": 1725100000.124,
+  "frame_id": "base_link",
+  "detections": [
+    {
+      "class": "Rigid Lethal Obstacle",
+      "distance_m": 2.69,
+      "azimuth_deg": -4.1,
+      "height_cm": 23.5,
+      "is_run_over_allowed": false,
+      "verdict": "LETHAL_OBSTACLE (Avoid)",
+      "cost": 254
+    }
+  ]
+}</code></pre>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Frontend Logic -->
+  <script>
+    let currentScenario = "rock";
+    let isUpdating = false;
+
+    // Elements
+    const imgRgb = document.getElementById("img-rgb");
+    const imgDepth = document.getElementById("img-depth");
+    const imgCostmap = document.getElementById("img-costmap");
+
+    const txtNumObs = document.getElementById("txt-num-obs");
+    const txtFps = document.getElementById("txt-fps");
+    const txtLatency = document.getElementById("txt-latency");
+    const txtSlope = document.getElementById("txt-slope");
+
+    const tBackproj = document.getElementById("t-backproj");
+    const tGround = document.getElementById("t-ground");
+    const tSeg = document.getElementById("t-seg");
+    const tTrav = document.getElementById("t-trav");
+    const tCost = document.getElementById("t-cost");
+
+    const barBackproj = document.getElementById("bar-backproj");
+    const barGround = document.getElementById("bar-ground");
+    const barSeg = document.getElementById("bar-seg");
+    const barTrav = document.getElementById("bar-trav");
+    const barCost = document.getElementById("bar-cost");
+
+    const tableBody = document.getElementById("table-obstacles-body");
+    const customControls = document.getElementById("custom-controls");
+    const codeRos2 = document.getElementById("code-ros2");
+
+    // Sliders
+    const slideClimb = document.getElementById("slide-climb");
+    const valClimb = document.getElementById("val-climb");
+
+    const slideClearance = document.getElementById("slide-clearance");
+    const valClearance = document.getElementById("val-clearance");
+
+    const slideSoft = document.getElementById("slide-soft");
+    const valSoft = document.getElementById("val-soft");
+
+    const slidePitch = document.getElementById("slide-pitch");
+    const valPitch = document.getElementById("val-pitch");
+
+    const slideObsDist = document.getElementById("slide-obs-dist");
+    const valObsDist = document.getElementById("val-obs-dist");
+
+    const slideObsHeight = document.getElementById("slide-obs-height");
+    const valObsHeight = document.getElementById("val-obs-height");
+
+    // Scenario selection
+    document.querySelectorAll(".btn-scenario").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".btn-scenario").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentScenario = btn.getAttribute("data-scenario");
+        customControls.style.display = (currentScenario === "custom") ? "block" : "none";
+        triggerUpdate();
+      });
+    });
+
+    // Slider Listeners
+    slideClimb.addEventListener("input", () => { valClimb.innerText = slideClimb.value + " cm"; triggerUpdate(); });
+    slideClearance.addEventListener("input", () => { valClearance.innerText = slideClearance.value + " cm"; triggerUpdate(); });
+    slideSoft.addEventListener("input", () => { valSoft.innerText = slideSoft.value + " cm"; triggerUpdate(); });
+    slidePitch.addEventListener("input", () => { valPitch.innerText = slidePitch.value + ".0°"; triggerUpdate(); });
+    slideObsDist.addEventListener("input", () => { valObsDist.innerText = (slideObsDist.value / 10).toFixed(1) + " m"; triggerUpdate(); });
+    slideObsHeight.addEventListener("input", () => { valObsHeight.innerText = slideObsHeight.value + " cm"; triggerUpdate(); });
+
+    // Tabs
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(btn.getAttribute("data-tab")).classList.add("active");
+      });
+    });
+
+    // API Call
+    async function triggerUpdate() {
+      if (isUpdating) return;
+      isUpdating = true;
+
+      const payload = {
+        scenario: currentScenario,
+        max_climb_step: parseFloat(slideClimb.value) / 100.0,
+        ground_clearance: parseFloat(slideClearance.value) / 100.0,
+        soft_vegetation_max_height: parseFloat(slideSoft.value) / 100.0,
+        pitch_deg: parseFloat(slidePitch.value),
+        custom_obs_dist: parseFloat(slideObsDist.value) / 10.0,
+        custom_obs_height: parseFloat(slideObsHeight.value) / 100.0
+      };
+
+      try {
+        const res = await fetch("/api/process", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          // Update Images
+          imgRgb.src = data.images.rgb_annotated;
+          imgDepth.src = data.images.depth_colormap;
+          imgCostmap.src = data.images.costmap_25d;
+
+          // Update Telemetry
+          txtFps.innerText = data.telemetry.fps + " FPS";
+          txtLatency.innerText = data.telemetry.total_latency_ms + " ms";
+          txtSlope.innerText = data.telemetry.ground_plane.slope_deg + "°";
+          txtNumObs.innerText = data.telemetry.num_obstacles + " Obstacles (" + data.telemetry.num_lethal + " Avoid, " + data.telemetry.num_run_over + " Run-over)";
+
+          const lat = data.telemetry.latency_breakdown;
+          tBackproj.innerText = lat.back_projection_ms + " ms";
+          tGround.innerText = lat.ground_plane_ms + " ms";
+          tSeg.innerText = lat.segmentation_ms + " ms";
+          tTrav.innerText = lat.traversability_ms + " ms";
+          tCost.innerText = lat.costmap_ms + " ms";
+
+          barBackproj.style.width = Math.min(lat.back_projection_ms / 15 * 100, 100) + "%";
+          barGround.style.width = Math.min(lat.ground_plane_ms / 15 * 100, 100) + "%";
+          barSeg.style.width = Math.min(lat.segmentation_ms / 15 * 100, 100) + "%";
+          barTrav.style.width = Math.min(lat.traversability_ms / 15 * 100, 100) + "%";
+          barCost.style.width = Math.min(lat.costmap_ms / 20 * 100, 100) + "%";
+
+          // Update Obstacles Table
+          tableBody.innerHTML = "";
+          if (data.obstacles.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-dim);">No elevated obstacles detected in field of view (Clear Terrain)</td></tr>';
+          } else {
+            data.obstacles.forEach(obs => {
+              let pillClass = "pill-avoid";
+              let actionText = "LETHAL (Avoid)";
+              if (obs.is_run_over_allowed) {
+                pillClass = "pill-runover";
+                actionText = "RUN-OVER (Safe)";
+              } else if (obs.traversability_type === 3) {
+                pillClass = "pill-ditch";
+                actionText = "DITCH (Fatal Avoid)";
+              }
+
+              const row = document.createElement("tr");
+              row.innerHTML = `
+                <td>#${obs.id}</td>
+                <td><strong>${obs.radial_distance_m.toFixed(2)}m</strong></td>
+                <td>${obs.azimuth_deg > 0 ? '+' : ''}${obs.azimuth_deg.toFixed(1)}°</td>
+                <td><strong>${obs.height_cm.toFixed(1)} cm</strong></td>
+                <td>${obs.semantic_name.split('(')[0].trim()}</td>
+                <td><span class="pill-action ${pillClass}">${actionText}</span></td>
+                <td>${obs.severity_cost}</td>
+              `;
+              tableBody.appendChild(row);
+            });
+          }
+
+          // Update ROS2 Payload Code Box
+          codeRos2.innerText = JSON.stringify({
+            topic: "/perception/detected_obstacles",
+            type: "vision_msgs/msg/Detection3DArray",
+            stamp: Date.now() / 1000.0,
+            active_detections: data.obstacles.length,
+            sample_detection: data.obstacles[0] || null,
+            occupancy_grid_meta: data.ros2_sample.occupancy_grid_info
+          }, null, 2);
+
+        }
+      } catch (err) {
+        console.error("Update error:", err);
+      } finally {
+        isUpdating = false;
+      }
+    }
+
+    // Initial trigger
+    window.addEventListener("DOMContentLoaded", () => {
+      triggerUpdate();
+    });
+  </script>
+</body>
+</html>

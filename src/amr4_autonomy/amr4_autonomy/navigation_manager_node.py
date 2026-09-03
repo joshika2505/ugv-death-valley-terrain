@@ -381,7 +381,7 @@ class NavigationManagerNode(Node):
         rx, ry = self.robot_pose[0], self.robot_pose[1]
         if start_from_current:
             start_coord = (rx, ry)
-            self.point_a = {'x': rx, 'y': ry, 'z': float(self.terrain_analyzer.get_height(rx, ry))}
+            self.point_a = {'x': rx, 'y': ry, 'z': float(self.terrain_analyzer.get_surface_elevation(rx, ry))}
         else:
             start_coord = (self.point_a['x'], self.point_a['y'])
         goal_coord = (self.point_b['x'], self.point_b['y'])

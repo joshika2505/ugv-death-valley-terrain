@@ -1,0 +1,36 @@
+mppi_controller_node:
+  ros__parameters:
+    control_rate_hz: 12.0
+    num_samples: 300
+    time_horizon: 20
+    dt: 0.10
+    temperature: 1.0
+    max_v: 1.20
+    min_v: -0.30
+    max_omega: 2.00
+    goal_tolerance_m: 0.40
+
+    dynamics:
+      max_accel: 1.50
+      max_yaw_accel: 3.00
+      wheelbase: 0.50
+      track_width: 0.45
+
+    critics:
+      obstacle:
+        weight: 20.0
+        lethal_cost_thresh: 75.0
+        lethal_penalty: 100000.0
+      path_follow:
+        weight: 6.0
+      path_align:
+        weight: 3.5
+      goal:
+        weight: 8.0
+      goal_angle:
+        weight: 3.0
+        trigger_dist: 1.2
+      smoothness:
+        weight: 2.0
+      semantic_speed:
+        weight: 4.0

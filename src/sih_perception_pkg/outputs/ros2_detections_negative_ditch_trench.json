@@ -1,0 +1,53 @@
+{
+  "timestamp": 1788110702.392642,
+  "ground_plane": {
+    "equation": "0.004x + -0.004y + 1.000z + -0.004 = 0",
+    "slope_deg": 0.3,
+    "inlier_ratio": 0.959
+  },
+  "num_obstacles_detected": 1,
+  "obstacles": [
+    {
+      "id": 1,
+      "centroid_x": 3.8487579822540283,
+      "centroid_y": 0.0,
+      "centroid_z": -0.20001617074012756,
+      "radial_distance_m": 3.8487579822540283,
+      "azimuth_deg": 0.0,
+      "length_m": 0.7567424774169922,
+      "width_m": 4.714240312576294,
+      "height_m": 0.20001183450222015,
+      "bbox_2d": [
+        51,
+        347,
+        590,
+        360
+      ],
+      "bbox_3d": [
+        3.5108461380004883,
+        4.2675886154174805,
+        -2.358314037322998,
+        2.355926275253296,
+        -0.20288357138633728,
+        -0.19709351658821106
+      ],
+      "is_run_over_allowed": false,
+      "traversability_type": 3,
+      "traversability_name": "Negative Hazard (Ditch/Hole)",
+      "semantic_class": 0,
+      "semantic_name": "Free Drivable (Soil/Pavement)",
+      "severity_cost": 255,
+      "num_points": 6547
+    }
+  ],
+  "latency_ms": {
+    "back_projection": 9.01,
+    "ground_plane": 7.67,
+    "segmentation": 7.07,
+    "traversability": 8.39,
+    "costmap": 13.68,
+    "detection": 14.37,
+    "total": 60.19,
+    "fps": 16.6
+  }
+}

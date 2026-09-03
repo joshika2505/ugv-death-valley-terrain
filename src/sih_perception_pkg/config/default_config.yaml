@@ -1,0 +1,44 @@
+# Configuration for Tracked UGV Perception & Traversability Pipeline
+
+camera:
+  width: 640
+  height: 480
+  fx: 380.0
+  fy: 380.0
+  cx: 320.0
+  cy: 240.0
+  baseline: 0.12        # meters
+  mount_x: 0.20         # forward mount offset relative to base_link (m)
+  mount_y: 0.00         # lateral mount offset (m)
+  mount_z: 0.35         # mount height above ground (m)
+  pitch_deg: -8.0       # downward tilt angle (deg)
+  roll_deg: 0.0
+  yaw_deg: 0.0
+  depth_min: 0.20       # meters
+  depth_max: 12.0       # meters
+
+vehicle_profile:
+  ground_clearance: 0.10          # 10 cm belly clearance (m)
+  max_climb_step: 0.15            # 15 cm step climb capability (m)
+  max_drop_step: 0.12             # 12 cm step down / ditch drop (m)
+  soft_vegetation_max_height: 0.40 # 40 cm crushable grass limit (m)
+  max_slope_deg: 35.0             # maximum climbable incline (deg)
+  max_side_slope_deg: 25.0        # rollover angle (deg)
+  max_trench_width: 0.25          # 25 cm span capability (m)
+  robot_length: 0.80              # meters
+  robot_width: 0.60               # meters
+  track_width: 0.15               # meters
+  inflation_radius: 0.35          # safety planning inflation (m)
+
+costmap:
+  resolution: 0.05      # 5 cm grid resolution (m/cell)
+  size_x: 8.0           # 8 meters forward/back (-1.0m to +7.0m)
+  size_y: 8.0           # 8 meters lateral (-4.0m to +4.0m)
+  origin_x: -1.0
+  origin_y: -4.0
+
+algorithm:
+  ransac_iterations: 120
+  ransac_distance_thresh: 0.04
+  min_cluster_pixels: 80
+  max_detection_range: 10.0

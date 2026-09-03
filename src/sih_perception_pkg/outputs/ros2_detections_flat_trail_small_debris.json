@@ -1,0 +1,20 @@
+{
+  "timestamp": 1788110701.8717692,
+  "ground_plane": {
+    "equation": "-0.009x + 0.001y + 1.000z + 0.012 = 0",
+    "slope_deg": 0.51,
+    "inlier_ratio": 0.999
+  },
+  "num_obstacles_detected": 0,
+  "obstacles": [],
+  "latency_ms": {
+    "back_projection": 9.89,
+    "ground_plane": 7.41,
+    "segmentation": 7.89,
+    "traversability": 5.57,
+    "costmap": 11.95,
+    "detection": 12.1,
+    "total": 54.82,
+    "fps": 18.2
+  }
+}

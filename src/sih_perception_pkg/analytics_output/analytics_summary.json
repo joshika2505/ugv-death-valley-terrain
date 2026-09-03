@@ -1,0 +1,128 @@
+{
+  "num_frames": 100,
+  "overall_fps": 9.3,
+  "safety_score_pct": 98.33,
+  "distance_metrics": {
+    "mae_meters": 0.9909,
+    "mae_cm": 99.09,
+    "rmse_cm": 127.51,
+    "max_error_cm": 311.46
+  },
+  "height_metrics": {
+    "mae_cm": 80.3,
+    "rmse_cm": 167.48
+  },
+  "ground_plane": {
+    "avg_inlier_ratio_pct": 82.8
+  },
+  "semantic_metrics": {
+    "Free Drivable": {
+      "precision": 0.619,
+      "recall": 0.908,
+      "f1_score": 0.736,
+      "iou": 0.582,
+      "support": 75120
+    },
+    "Soft Traversable": {
+      "precision": 0.485,
+      "recall": 0.795,
+      "f1_score": 0.603,
+      "iou": 0.431,
+      "support": 17240
+    },
+    "Rigid Lethal": {
+      "precision": 1.0,
+      "recall": 0.021,
+      "f1_score": 0.04,
+      "iou": 0.021,
+      "support": 23280
+    },
+    "Negative Hazard": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "iou": 0.0,
+      "support": 23280
+    },
+    "overall_accuracy": 0.593,
+    "mean_iou": 0.2585,
+    "mean_f1": 0.3448
+  },
+  "traversability_metrics": {
+    "Free Drivable": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1_score": 0.0,
+      "iou": 0.0,
+      "support": 0
+    },
+    "Run-Over Safe": {
+      "precision": 0.974,
+      "recall": 0.95,
+      "f1_score": 0.962,
+      "iou": 0.927,
+      "support": 40
+    },
+    "Lethal Avoid": {
+      "precision": 1.0,
+      "recall": 0.975,
+      "f1_score": 0.987,
+      "iou": 0.975,
+      "support": 40
+    },
+    "Ditch Fatal": {
+      "precision": 0.909,
+      "recall": 1.0,
+      "f1_score": 0.952,
+      "iou": 0.909,
+      "support": 20
+    },
+    "overall_accuracy": 0.97,
+    "mean_iou": 0.7027,
+    "mean_f1": 0.7254
+  },
+  "latency_stats": {
+    "back_projection": {
+      "mean": 8.859063210074964,
+      "p50": 8.688462500686,
+      "p90": 10.969477099570213,
+      "p99": 13.135128749090667
+    },
+    "ground_plane": {
+      "mean": 8.184843599974556,
+      "p50": 7.483901499654166,
+      "p90": 11.791264199564466,
+      "p99": 13.250100280984048
+    },
+    "segmentation": {
+      "mean": 6.516550209889829,
+      "p50": 6.201020500157028,
+      "p90": 8.287938600551572,
+      "p99": 9.409537258434284
+    },
+    "traversability": {
+      "mean": 7.945792810151033,
+      "p50": 7.674332000533468,
+      "p90": 10.300809900945751,
+      "p99": 12.306418821499392
+    },
+    "costmap": {
+      "mean": 14.910644900010084,
+      "p50": 12.174831999800517,
+      "p90": 27.118883299044683,
+      "p99": 29.609860400269124
+    },
+    "detection": {
+      "mean": 12.648331279888225,
+      "p50": 11.688043499816558,
+      "p90": 19.668047099548858,
+      "p99": 34.4343982011924
+    },
+    "total": {
+      "mean": 59.075143710015254,
+      "p50": 54.6792170007393,
+      "p90": 77.58478159921651,
+      "p99": 84.7245751391347
+    }
+  }
+}
