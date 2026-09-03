@@ -94,7 +94,7 @@ class TerrainPathPlanner:
                     if slope > max_slope:
                         continue # Untraversable slope / cliff
 
-                    # 2. Dynamic Obstacle Clearance Check
+                    # 2. Dynamic Obstacle Clearance Check (Wide Safe Margin)
                     wx = min_x + nx * res
                     wy = min_y + ny * res
                     blocked_by_obs = False
@@ -102,11 +102,12 @@ class TerrainPathPlanner:
 
                     for (ox, oy, orad) in obs_list:
                         d_obs = math.hypot(wx - ox, wy - oy)
-                        if d_obs < orad:
+                        if d_obs < (orad + 0.35):
                             blocked_by_obs = True
                             break
-                        elif d_obs < (orad + 1.2):
-                            obs_cost_penalty += (1.2 - (d_obs - orad)) * 20.0
+                        elif d_obs < (orad + 2.0):
+                            # Smooth repulsive potential field around obstacle
+                            obs_cost_penalty += (2.0 - (d_obs - orad)) * 60.0
 
                     if blocked_by_obs:
                         continue

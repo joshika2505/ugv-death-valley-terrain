@@ -161,7 +161,7 @@ class NavigationManagerNode(Node):
         if valid:
             self.min_clearance = min(valid)
 
-        # Dynamic Obstacle Perception & Smooth Detour Trigger
+        # Intelligent Dynamic Obstacle Perception & Proactive Detour Trigger
         num_readings = len(msg.ranges)
         if num_readings > 0:
             angle_min = msg.angle_min
@@ -169,12 +169,12 @@ class NavigationManagerNode(Node):
             forward_obstacles = []
             
             for i, r in enumerate(msg.ranges):
-                if 0.55 < r < 1.4: # Obstacle in path range
+                if 0.45 < r < 3.5: # Wide forward obstacle detection up to 3.5m
                     angle = angle_min + i * angle_inc
-                    if abs(angle) < math.radians(45.0): # Forward cone
+                    if abs(angle) < math.radians(50.0): # 100 deg forward cone
                         forward_obstacles.append((r, angle))
 
-            if len(forward_obstacles) > 4:
+            if len(forward_obstacles) >= 3:
                 # Find closest obstacle distance and angle
                 min_r, min_ang = min(forward_obstacles, key=lambda x: x[0])
                 rx, ry, ryaw = self.robot_pose
@@ -182,15 +182,22 @@ class NavigationManagerNode(Node):
                 obs_world_y = ry + min_r * math.sin(ryaw + min_ang)
 
                 # Register obstacle into A* planner
-                self.path_planner.add_obstacle(obs_world_x, obs_world_y, radius=0.9)
+                self.path_planner.add_obstacle(obs_world_x, obs_world_y, radius=1.1)
+
+                # Check if obstacle blocks upcoming planned waypoints
+                blocks_path = False
+                for wp in self.planned_waypoints[:10]:
+                    if math.hypot(wp['x'] - obs_world_x, wp['y'] - obs_world_y) < 1.4:
+                        blocks_path = True
+                        break
 
                 now_t = time.time()
-                if self.path_status == 'Navigating' and (not hasattr(self, 'last_replan_time') or (now_t - self.last_replan_time > 2.5)):
+                if blocks_path and self.path_status in ['Navigating', 'Ready'] and (not hasattr(self, 'last_replan_time') or (now_t - self.last_replan_time > 1.2)):
                     self.last_replan_time = now_t
-                    self.get_logger().warn(f'[ObstaclePerception] Obstacle at {min_r:.2f}m ({obs_world_x:.1f}, {obs_world_y:.1f})! Finding shortest detour...')
-                    self.path_status = 'Replanning'
+                    self.get_logger().warn(f'[IntelligentLiDAR] Obstacle at {min_r:.2f}m ({obs_world_x:.1f}, {obs_world_y:.1f}) in path corridor! Re-routing around obstacle...')
                     self.trigger_plan_path(start_from_current=True)
-                    self.path_status = 'Navigating'
+                    if self.path_status != 'Ready':
+                        self.path_status = 'Navigating'
 
     def _perception_worker(self):
         """Asynchronous background worker for 3D depth and traversability inference."""
@@ -210,12 +217,29 @@ class NavigationManagerNode(Node):
 
                     # Register lethal obstacles for dynamic avoidance
                     if result.obstacles:
+                        needs_replan = False
                         for obs in result.obstacles:
-                            if not obs.is_run_over_allowed and obs.radial_distance_m < 8.0:
+                            if not obs.is_run_over_allowed and obs.radial_distance_m < 7.0:
                                 rx, ry, ryaw = self.robot_pose
                                 obs_x = rx + obs.centroid_x * math.cos(ryaw) - obs.centroid_y * math.sin(ryaw)
                                 obs_y = ry + obs.centroid_x * math.sin(ryaw) + obs.centroid_y * math.cos(ryaw)
-                                self.path_planner.add_obstacle(obs_x, obs_y, radius=max(0.7, obs.width_m/2.0 + 0.3))
+                                
+                                obs_radius = max(1.1, obs.width_m/2.0 + 0.5)
+                                self.path_planner.add_obstacle(obs_x, obs_y, radius=obs_radius)
+
+                                # Proactively check if 3D vision obstacle intersects path
+                                for wp in self.planned_waypoints[:12]:
+                                    if math.hypot(wp['x'] - obs_x, wp['y'] - obs_y) < (obs_radius + 0.6):
+                                        needs_replan = True
+                                        break
+
+                        now_t = time.time()
+                        if needs_replan and self.path_status in ['Navigating', 'Ready'] and (not hasattr(self, 'last_replan_time') or (now_t - self.last_replan_time > 1.2)):
+                            self.last_replan_time = now_t
+                            self.get_logger().warn(f'[Intelligent3DPerception] Lethal obstacle blocking path! Computing dynamic detour...')
+                            self.trigger_plan_path(start_from_current=True)
+                            if self.path_status != 'Ready':
+                                self.path_status = 'Navigating'
 
                         self.publish_perception_markers(result)
             except Exception as e:
