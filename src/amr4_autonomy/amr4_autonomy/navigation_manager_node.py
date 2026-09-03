@@ -379,8 +379,9 @@ class NavigationManagerNode(Node):
 
         self.path_status = 'Planning'
         rx, ry = self.robot_pose[0], self.robot_pose[1]
-        if start_from_current and abs(rx) < 48.0 and abs(ry) < 48.0 and math.hypot(rx, ry) > 0.5:
+        if start_from_current:
             start_coord = (rx, ry)
+            self.point_a = {'x': rx, 'y': ry, 'z': float(self.terrain_analyzer.get_height(rx, ry))}
         else:
             start_coord = (self.point_a['x'], self.point_a['y'])
         goal_coord = (self.point_b['x'], self.point_b['y'])
@@ -391,12 +392,13 @@ class NavigationManagerNode(Node):
         self.get_logger().info(f'[PathPlanner] Route ready with {len(self.planned_waypoints)} safe 3D contour waypoints.')
 
     def start_navigation(self):
-        if len(self.planned_waypoints) == 0:
+        rx, ry = self.robot_pose[0], self.robot_pose[1]
+        # If no waypoints or waypoints start far from robot, plan directly from current position
+        if len(self.planned_waypoints) == 0 or math.hypot(self.planned_waypoints[0]['x'] - rx, self.planned_waypoints[0]['y'] - ry) > 1.5:
             self.trigger_plan_path(start_from_current=True)
         if len(self.planned_waypoints) > 0:
-            self.path_status = 'Terrain_Scanning'
-            self.scan_start_time = time.time()
-            self.get_logger().info('[Observation] Performing 3D terrain & environmental sector scan...')
+            self.path_status = 'Navigating'
+            self.get_logger().info('[Navigation] Autonomous physics navigation started!')
 
     def stop_navigation(self):
         self.path_status = 'Ready'
