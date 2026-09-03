@@ -420,8 +420,11 @@ class NavigationManagerNode(Node):
 
         # 1. Terrain Scanning Observation Phase
         if self.path_status == 'Terrain_Scanning':
-            if now_sec - getattr(self, 'scan_start_time', now_sec) > 0.8:
+            if not hasattr(self, 'scan_start_time') or self.scan_start_time is None:
+                self.scan_start_time = now_sec
+            if (now_sec - self.scan_start_time) > 0.5:
                 self.path_status = 'Navigating'
+                self.scan_start_time = None
                 self.get_logger().info('[Navigation] Autonomous physics navigation started!')
             else:
                 stop_cmd = Twist()

@@ -2,8 +2,6 @@
 # ==============================================================================
 # Master Autonomous AMR-4 Simulation Launcher in Death Valley Gazebo
 # ==============================================================================
-set -e
-
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 cd "$DIR"
 
@@ -47,22 +45,23 @@ case "$MODE" in
         echo " Point B (Stop):  ($GOAL_X, $GOAL_Y)"
         echo "=========================================================="
         echo "Launching Full Autonomous Simulation (Gazebo + AMR-4 + SLAM + Nav2 + RViz2 + Autonomy)..."
-        docker exec -it \
+        docker exec \
             --env="DISPLAY=$DISPLAY" \
             --env="QT_X11_NO_MITSHM=1" \
             --env="ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST" \
             --env="ROS_DOMAIN_ID=0" \
             "$CONTAINER_NAME" bash -c "
+                pkill -9 -f ros2; pkill -9 -f gz; pkill -9 -f rviz; pkill -9 -f parameter_bridge; pkill -9 -f python3 || true; sleep 1;
                 source /opt/ros/jazzy/setup.bash && \
                 cd $WORKSPACE_DIR && \
-                colcon build --symlink-install --packages-select death_valley_world amr4_description amr4_gazebo amr4_navigation amr4_autonomy amr4_bringup ugv_belt_drive && \
+                colcon build --symlink-install --packages-select death_valley_world amr4_description amr4_gazebo amr4_navigation amr4_autonomy amr4_bringup sih_bot && \
                 source $WORKSPACE_DIR/install/setup.bash && \
                 ros2 launch amr4_bringup death_valley_autonomous.launch.py start_x:=$START_X start_y:=$START_Y goal_x:=$GOAL_X goal_y:=$GOAL_Y"
         ;;
 
     sim|gazebo)
         echo "Launching Gazebo Death Valley Terrain & AMR-4 only..."
-        docker exec -it \
+        docker exec \
             --env="DISPLAY=$DISPLAY" \
             --env="QT_X11_NO_MITSHM=1" \
             "$CONTAINER_NAME" bash -c "
@@ -75,7 +74,7 @@ case "$MODE" in
 
     test)
         echo "Running Automated Autonomy Validation Test Suite..."
-        docker exec -it \
+        docker exec \
             --env="DISPLAY=$DISPLAY" \
             --env="QT_X11_NO_MITSHM=1" \
             "$CONTAINER_NAME" bash -c "

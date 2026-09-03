@@ -1,0 +1,235 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="sih_bot">
+
+  <!-- ============================ CONSTANTS ============================== -->
+  <xacro:property name="PI" value="3.1415926535897931"/>
+  <xacro:property name="robot_mass" value="28.0"/>
+  <xacro:property name="wheel_radius" value="0.065"/>
+  <xacro:property name="wheel_width" value="0.06"/>
+  <xacro:property name="wheelbase" value="0.32"/>
+  <xacro:property name="track_width" value="0.36"/>
+
+  <!-- ============================ MATERIALS ============================== -->
+  <material name="sih_charcoal">
+    <color rgba="0.22 0.24 0.28 1.0"/>
+  </material>
+  <material name="signal_orange">
+    <color rgba="1.0 0.45 0.0 1.0"/>
+  </material>
+
+  <!-- ============================ BASE FOOTPRINT ========================= -->
+  <link name="base_footprint"/>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 ${wheel_radius + 0.015}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ============================ CHASSIS (SIH BOT MESH) ================= -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 -0.05" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://sih_bot/meshes/sih_bot.stl" scale="1.0 1.0 1.0"/>
+      </geometry>
+      <material name="sih_charcoal"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.04" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.48 0.38 0.28"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <!-- Lowered Center of Mass for rock-solid stability -->
+      <origin xyz="0 0 -0.06" rpy="0 0 0"/>
+      <mass value="${robot_mass}"/>
+      <inertia ixx="0.75" ixy="0.0" ixz="0.0" iyy="0.85" iyz="0.0" izz="1.10"/>
+    </inertial>
+  </link>
+
+  <gazebo reference="base_link">
+    <visual>
+      <material>
+        <ambient>0.2 0.22 0.26 1.0</ambient>
+        <diffuse>0.3 0.33 0.38 1.0</diffuse>
+        <specular>0.6 0.6 0.6 1.0</specular>
+      </material>
+    </visual>
+  </gazebo>
+
+  <!-- ============================ 4-WHEEL DRIVE TRACTION MACRO =========== -->
+  <xacro:macro name="traction_wheel" params="prefix parent x_pos y_pos">
+    <link name="${prefix}_wheel">
+      <collision>
+        <origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="1.2"/>
+        <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.005"/>
+      </inertial>
+    </link>
+
+    <joint name="${prefix}_wheel_joint" type="continuous">
+      <parent link="${parent}"/>
+      <child link="${prefix}_wheel"/>
+      <origin xyz="${x_pos} ${y_pos} -0.015" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+      <limit effort="300.0" velocity="30.0"/>
+      <dynamics damping="0.05" friction="0.02"/>
+    </joint>
+
+    <gazebo reference="${prefix}_wheel">
+      <mu1>1.8</mu1>
+      <mu2>1.8</mu2>
+      <kp>1000000.0</kp>
+      <kd>100.0</kd>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:traction_wheel prefix="left_front"  parent="base_link" x_pos="${wheelbase/2}"  y_pos="${track_width/2}"/>
+  <xacro:traction_wheel prefix="left_rear"   parent="base_link" x_pos="${-wheelbase/2}" y_pos="${track_width/2}"/>
+  <xacro:traction_wheel prefix="right_front" parent="base_link" x_pos="${wheelbase/2}"  y_pos="${-track_width/2}"/>
+  <xacro:traction_wheel prefix="right_rear"  parent="base_link" x_pos="${-wheelbase/2}" y_pos="${-track_width/2}"/>
+
+  <!-- ============================ SENSORS ================================ -->
+  <!-- 1. IMU -->
+  <link name="imu_link">
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0 0 0.10" rpy="0 0 0"/>
+  </joint>
+
+  <!-- 2. LiDAR (360 SLAM) -->
+  <link name="lidar_link">
+    <inertial>
+      <mass value="0.2"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+  </link>
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="0 0 0.46" rpy="0 0 0"/>
+  </joint>
+
+  <!-- 3. RGB-D Camera -->
+  <link name="camera_link">
+    <inertial>
+      <mass value="0.15"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+  </link>
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+    <origin xyz="0.22 0 0.32" rpy="0 0.08 0"/>
+  </joint>
+
+  <link name="camera_optical_link"/>
+  <joint name="camera_optical_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="camera_optical_link"/>
+    <origin xyz="0 0 0" rpy="${-PI/2} 0 ${-PI/2}"/>
+  </joint>
+
+  <!-- ============================ GAZEBO SENSORS & PLUGINS =============== -->
+  <!-- IMU Sensor -->
+  <gazebo reference="base_footprint">
+    <sensor name="imu_sensor" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <topic>/imu/data</topic>
+      <gz_frame_id>imu_link</gz_frame_id>
+      <imu>
+        <angular_velocity><x><noise type="gaussian"><mean>0</mean><stddev>0.001</stddev></noise></x></angular_velocity>
+        <linear_acceleration><x><noise type="gaussian"><mean>0</mean><stddev>0.01</stddev></noise></x></linear_acceleration>
+      </imu>
+    </sensor>
+  </gazebo>
+
+  <!-- LiDAR Sensor -->
+  <gazebo reference="base_footprint">
+    <sensor name="lidar_sensor" type="gpu_lidar">
+      <pose relative_to="base_footprint">0 0 0.54 0 0 0</pose>
+      <topic>/scan</topic>
+      <update_rate>20</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>360</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.14159</min_angle>
+            <max_angle>3.14159</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.15</min>
+          <max>25.0</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <always_on>true</always_on>
+      <visualize>false</visualize>
+      <gz_frame_id>lidar_link</gz_frame_id>
+    </sensor>
+  </gazebo>
+
+  <!-- RGB-D Camera Sensor -->
+  <gazebo reference="camera_link">
+    <sensor name="rover_camera" type="rgbd_camera">
+      <pose>0 0 0 0 0 0</pose>
+      <camera>
+        <horizontal_fov>1.3962634</horizontal_fov>
+        <image><width>640</width><height>480</height><format>R8G8B8</format></image>
+        <clip><near>0.1</near><far>30.0</far></clip>
+        <depth_camera><clip><near>0.1</near><far>15.0</far></clip></depth_camera>
+      </camera>
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <visualize>false</visualize>
+      <topic>/camera</topic>
+      <gz_frame_id>camera_optical_link</gz_frame_id>
+    </sensor>
+  </gazebo>
+
+  <!-- 4-Wheel Synchronized DiffDrive Mobility System -->
+  <gazebo>
+    <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
+      <left_joint>left_front_wheel_joint</left_joint>
+      <left_joint>left_rear_wheel_joint</left_joint>
+      <right_joint>right_front_wheel_joint</right_joint>
+      <right_joint>right_rear_wheel_joint</right_joint>
+      <wheel_separation>${track_width}</wheel_separation>
+      <wheel_radius>${wheel_radius}</wheel_radius>
+      <max_linear_acceleration>2.5</max_linear_acceleration>
+      <max_angular_acceleration>3.0</max_angular_acceleration>
+      <max_linear_velocity>1.5</max_linear_velocity>
+      <min_linear_velocity>-1.5</min_linear_velocity>
+      <max_angular_velocity>2.0</max_angular_velocity>
+      <min_angular_velocity>-2.0</min_angular_velocity>
+      <topic>/cmd_vel</topic>
+      <odom_topic>/odom</odom_topic>
+      <frame_id>odom</frame_id>
+      <child_frame_id>base_footprint</child_frame_id>
+      <odom_publish_frequency>50</odom_publish_frequency>
+    </plugin>
+
+    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+      <topic>/joint_states</topic>
+      <update_rate>30</update_rate>
+    </plugin>
+  </gazebo>
+
+</robot>

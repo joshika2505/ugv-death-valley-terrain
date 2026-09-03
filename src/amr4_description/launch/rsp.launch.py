@@ -7,11 +7,11 @@ from launch_ros.parameter_descriptions import ParameterValue
 
 def generate_launch_description():
     try:
-        pkg_path = get_package_share_directory('ugv_belt_drive')
-        xacro_file = os.path.join(pkg_path, 'urdf', 'ugv_belt_drive_robot.urdf.xacro')
+        pkg_path = get_package_share_directory('sih_bot')
+        xacro_file = os.path.join(pkg_path, 'urdf', 'sih_bot.urdf.xacro')
     except Exception:
-        pkg_path = get_package_share_directory('amr4_description')
-        xacro_file = os.path.join(pkg_path, 'urdf', 'amr4.urdf.xacro')
+        pkg_path = get_package_share_directory('sih_bot')
+        xacro_file = os.path.join(pkg_path, 'urdf', 'sih_bot.urdf.xacro')
     
     robot_description = ParameterValue(Command(['xacro ', xacro_file]), value_type=str)
 
