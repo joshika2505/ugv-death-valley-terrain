@@ -3,11 +3,11 @@
 
   <!-- ============================ CONSTANTS ============================== -->
   <xacro:property name="PI" value="3.1415926535897931"/>
-  <xacro:property name="robot_mass" value="28.0"/>
-  <xacro:property name="wheel_radius" value="0.065"/>
-  <xacro:property name="wheel_width" value="0.06"/>
+  <xacro:property name="robot_mass" value="25.0"/>
+  <xacro:property name="wheel_radius" value="0.075"/>
+  <xacro:property name="wheel_width" value="0.07"/>
   <xacro:property name="wheelbase" value="0.32"/>
-  <xacro:property name="track_width" value="0.36"/>
+  <xacro:property name="track_width" value="0.38"/>
 
   <!-- ============================ MATERIALS ============================== -->
   <material name="sih_charcoal">
@@ -23,7 +23,7 @@
   <joint name="base_footprint_joint" type="fixed">
     <parent link="base_footprint"/>
     <child link="base_link"/>
-    <origin xyz="0 0 ${wheel_radius + 0.015}" rpy="0 0 0"/>
+    <origin xyz="0 0 ${wheel_radius + 0.02}" rpy="0 0 0"/>
   </joint>
 
   <!-- ============================ CHASSIS (SIH BOT MESH) ================= -->
@@ -36,16 +36,16 @@
       <material name="sih_charcoal"/>
     </visual>
     <collision>
-      <origin xyz="0 0 0.04" rpy="0 0 0"/>
+      <origin xyz="0 0 0.08" rpy="0 0 0"/>
       <geometry>
-        <box size="0.48 0.38 0.28"/>
+        <box size="0.45 0.35 0.16"/>
       </geometry>
     </collision>
     <inertial>
       <!-- Lowered Center of Mass for rock-solid stability -->
-      <origin xyz="0 0 -0.06" rpy="0 0 0"/>
+      <origin xyz="0 0 -0.04" rpy="0 0 0"/>
       <mass value="${robot_mass}"/>
-      <inertia ixx="0.75" ixy="0.0" ixz="0.0" iyy="0.85" iyz="0.0" izz="1.10"/>
+      <inertia ixx="0.65" ixy="0.0" ixz="0.0" iyy="0.75" iyz="0.0" izz="0.95"/>
     </inertial>
   </link>
 
@@ -70,23 +70,23 @@
       </collision>
       <inertial>
         <origin xyz="0 0 0" rpy="0 0 0"/>
-        <mass value="1.2"/>
-        <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.005"/>
+        <mass value="1.5"/>
+        <inertia ixx="0.004" ixy="0" ixz="0" iyy="0.004" iyz="0" izz="0.007"/>
       </inertial>
     </link>
 
     <joint name="${prefix}_wheel_joint" type="continuous">
       <parent link="${parent}"/>
       <child link="${prefix}_wheel"/>
-      <origin xyz="${x_pos} ${y_pos} -0.015" rpy="0 0 0"/>
+      <origin xyz="${x_pos} ${y_pos} -0.02" rpy="0 0 0"/>
       <axis xyz="0 1 0"/>
-      <limit effort="300.0" velocity="30.0"/>
+      <limit effort="400.0" velocity="35.0"/>
       <dynamics damping="0.05" friction="0.02"/>
     </joint>
 
     <gazebo reference="${prefix}_wheel">
-      <mu1>1.8</mu1>
-      <mu2>1.8</mu2>
+      <mu1>2.5</mu1>
+      <mu2>2.5</mu2>
       <kp>1000000.0</kp>
       <kd>100.0</kd>
     </gazebo>

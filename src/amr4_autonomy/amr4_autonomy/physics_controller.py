@@ -16,11 +16,11 @@ class PhysicsBasedPathTracker:
         self.lookahead_dist_min = 0.8  # meters
         self.lookahead_dist_max = 2.5  # meters
         self.lookahead_gain = 1.2
-        self.max_linear_speed = 1.0    # m/s
-        self.min_linear_speed = 0.15   # m/s
-        self.max_angular_speed = 1.2   # rad/s
-        self.max_accel = 0.6           # m/s^2
-        self.max_decel = 1.0           # m/s^2
+        self.max_linear_speed = 1.2    # m/s
+        self.min_linear_speed = 0.30   # m/s
+        self.max_angular_speed = 1.8   # rad/s
+        self.max_accel = 1.2           # m/s^2
+        self.max_decel = 1.5           # m/s^2
         self.arrival_tolerance = 0.9   # meters
 
         self.current_speed = 0.0
@@ -162,8 +162,8 @@ class PhysicsBasedPathTracker:
 
         # In-place pivot if heading error is large
         heading_err = math.atan2(local_y, local_x)
-        if abs(heading_err) > math.radians(65.0):
-            cmd_v = 0.05
-            cmd_w = np.clip(heading_err * 1.5, -self.max_angular_speed, self.max_angular_speed)
+        if abs(heading_err) > math.radians(45.0):
+            cmd_v = 0.18
+            cmd_w = np.clip(heading_err * 2.2, -self.max_angular_speed, self.max_angular_speed)
 
         return cmd_v, cmd_w, False, dist_to_goal, stability_status

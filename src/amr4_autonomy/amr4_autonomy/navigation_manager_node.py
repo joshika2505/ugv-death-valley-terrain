@@ -377,7 +377,8 @@ class NavigationManagerNode(Node):
         if not self.points_set['b']:
             return
 
-        self.path_status = 'Planning'
+    def trigger_plan_path(self, start_from_current=False):
+        old_status = self.path_status
         rx, ry = self.robot_pose[0], self.robot_pose[1]
         if start_from_current:
             start_coord = (rx, ry)
@@ -388,17 +389,17 @@ class NavigationManagerNode(Node):
 
         self.get_logger().info(f'[PathPlanner] Planning 3D terrain route from {start_coord} to {goal_coord}...')
         self.planned_waypoints = self.path_planner.plan_path(start_coord, goal_coord)
-        self.path_status = 'Ready'
+        if old_status == 'Navigating' or start_from_current:
+            self.path_status = 'Navigating'
+        else:
+            self.path_status = 'Ready'
         self.get_logger().info(f'[PathPlanner] Route ready with {len(self.planned_waypoints)} safe 3D contour waypoints.')
 
     def start_navigation(self):
         rx, ry = self.robot_pose[0], self.robot_pose[1]
-        # If no waypoints or waypoints start far from robot, plan directly from current position
-        if len(self.planned_waypoints) == 0 or math.hypot(self.planned_waypoints[0]['x'] - rx, self.planned_waypoints[0]['y'] - ry) > 1.5:
-            self.trigger_plan_path(start_from_current=True)
-        if len(self.planned_waypoints) > 0:
-            self.path_status = 'Navigating'
-            self.get_logger().info('[Navigation] Autonomous physics navigation started!')
+        self.trigger_plan_path(start_from_current=True)
+        self.path_status = 'Navigating'
+        self.get_logger().info('[Navigation] Autonomous physics navigation started!')
 
     def stop_navigation(self):
         self.path_status = 'Ready'
