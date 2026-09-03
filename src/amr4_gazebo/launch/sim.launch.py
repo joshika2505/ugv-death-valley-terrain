@@ -25,19 +25,20 @@ def generate_launch_description():
     except Exception:
         pkg_sih_bot = pkg_amr4_description
 
-    share_dir = os.path.dirname(pkg_amr4_description)
-    gz_resource_path = SetEnvironmentVariable(
-        name='GZ_SIM_RESOURCE_PATH',
-        value=':'.join([
-            share_dir,
-            pkg_sih_bot,
-            pkg_amr4_description,
-            os.path.join(pkg_amr4_description, 'models'),
-            pkg_death_valley,
-            os.path.join(pkg_death_valley, 'models'),
-            os.environ.get('GZ_SIM_RESOURCE_PATH', '')
-        ])
-    )
+    share_dir = os.path.dirname(pkg_sih_bot)
+    gz_paths = ':'.join([
+        share_dir,
+        pkg_sih_bot,
+        os.path.dirname(pkg_sih_bot),
+        pkg_amr4_description,
+        os.path.join(pkg_amr4_description, 'models'),
+        pkg_death_valley,
+        os.path.join(pkg_death_valley, 'models'),
+        os.environ.get('GZ_SIM_RESOURCE_PATH', ''),
+        os.environ.get('IGN_GAZEBO_RESOURCE_PATH', '')
+    ])
+    gz_resource_path = SetEnvironmentVariable(name='GZ_SIM_RESOURCE_PATH', value=gz_paths)
+    ign_resource_path = SetEnvironmentVariable(name='IGN_GAZEBO_RESOURCE_PATH', value=gz_paths)
 
     gz_sim = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -97,6 +98,7 @@ def generate_launch_description():
         DeclareLaunchArgument('start_z', default_value='3.1', description='Initial Z elevation'),
         DeclareLaunchArgument('start_yaw', default_value='0.6', description='Initial Yaw orientation'),
         gz_resource_path,
+        ign_resource_path,
         gz_sim,
         robot_desc_launch,
         spawn_robot,

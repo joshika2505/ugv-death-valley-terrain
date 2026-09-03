@@ -630,10 +630,6 @@ class NavigationManagerNode(Node):
 
             def do_GET(self):
                 if self.path.startswith('/api/status'):
-                    self.send_response(200)
-                    self.send_header('Content-Type', 'application/json')
-                    self.send_header('Access-Control-Allow-Origin', '*')
-                    self.end_headers()
                     status_data = {
                         'start_a': node_ref.point_a,
                         'destination_b': node_ref.point_b,
@@ -650,7 +646,13 @@ class NavigationManagerNode(Node):
                         'waypoints_count': len(node_ref.planned_waypoints),
                         'waypoints': node_ref.planned_waypoints[::2] # Decimated for light payload
                     }
-                    self.wfile.write(json.dumps(status_data).encode('utf-8'))
+                    body = json.dumps(status_data).encode('utf-8')
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.send_header('Content-Length', str(len(body)))
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(body)
                 elif self.path == '/api/camera_stream':
                     self.send_response(200)
                     self.send_header('Content-Type', 'multipart/x-mixed-replace; boundary=frame')
@@ -670,6 +672,7 @@ class NavigationManagerNode(Node):
                     if node_ref.latest_camera_jpg:
                         self.send_response(200)
                         self.send_header('Content-Type', 'image/jpeg')
+                        self.send_header('Content-Length', str(len(node_ref.latest_camera_jpg)))
                         self.send_header('Access-Control-Allow-Origin', '*')
                         self.end_headers()
                         self.wfile.write(node_ref.latest_camera_jpg)
@@ -680,56 +683,60 @@ class NavigationManagerNode(Node):
                     super().do_GET()
 
             def do_POST(self):
-                content_len = int(self.headers.get('Content-Length', 0))
-                post_body = self.rfile.read(content_len) if content_len > 0 else b'{}'
                 try:
-                    data = json.loads(post_body.decode('utf-8'))
-                except Exception:
-                    data = {}
+                    content_len = int(self.headers.get('Content-Length', 0))
+                    post_body = self.rfile.read(content_len) if content_len > 0 else b'{}'
+                    try:
+                        data = json.loads(post_body.decode('utf-8'))
+                    except Exception:
+                        data = {}
 
-                if self.path == '/api/set_point_a':
-                    node_ref.set_point_a(data.get('x', 0.0), data.get('y', 0.0))
-                    res = {'status': 'success', 'point_a': node_ref.point_a}
-                elif self.path == '/api/set_point_b':
-                    node_ref.set_point_b(data.get('x', 15.0), data.get('y', 15.0))
-                    res = {'status': 'success', 'point_b': node_ref.point_b}
-                elif self.path == '/api/plan_path':
-                    node_ref.trigger_plan_path(start_from_current=False)
-                    res = {'status': 'success', 'waypoints': len(node_ref.planned_waypoints)}
-                elif self.path == '/api/plan_alternative_path':
-                    node_ref.get_logger().info('[PathPlanner] Planning alternative gentle valley pass...')
-                    node_ref.path_status = 'Planning'
-                    node_ref.planned_waypoints = node_ref.path_planner.plan_gentle_valley_path(
-                        (node_ref.point_a['x'], node_ref.point_a['y']),
-                        (node_ref.point_b['x'], node_ref.point_b['y'])
-                    )
-                    node_ref.path_status = 'Ready'
-                    res = {'status': 'success', 'waypoints': len(node_ref.planned_waypoints)}
-                elif self.path == '/api/start_navigation':
-                    node_ref.start_navigation()
-                    res = {'status': 'success', 'state': node_ref.path_status}
-                elif self.path == '/api/stop':
-                    node_ref.stop_navigation()
-                    res = {'status': 'success', 'state': node_ref.path_status}
-                elif self.path == '/api/reset':
-                    node_ref.reset_navigation()
-                    res = {'status': 'success', 'state': node_ref.path_status}
-                elif self.path == '/api/recover_robot':
-                    # Apply emergency pulse burst to self-right
-                    node_ref.stability_status = 'RECOVERED'
-                    burst = Twist()
-                    burst.linear.x = 0.5
-                    burst.angular.z = 1.5
-                    node_ref.cmd_pub.publish(burst)
-                    res = {'status': 'success', 'message': 'Flip recovery maneuver executed'}
-                else:
-                    res = {'status': 'unknown_endpoint'}
+                    if self.path == '/api/set_point_a':
+                        node_ref.set_point_a(data.get('x', 0.0), data.get('y', 0.0))
+                        res = {'status': 'success', 'point_a': node_ref.point_a}
+                    elif self.path == '/api/set_point_b':
+                        node_ref.set_point_b(data.get('x', 15.0), data.get('y', 15.0))
+                        res = {'status': 'success', 'point_b': node_ref.point_b}
+                    elif self.path == '/api/plan_path':
+                        node_ref.trigger_plan_path(start_from_current=False)
+                        res = {'status': 'success', 'waypoints': len(node_ref.planned_waypoints)}
+                    elif self.path == '/api/plan_alternative_path':
+                        node_ref.get_logger().info('[PathPlanner] Planning alternative gentle valley pass...')
+                        node_ref.path_status = 'Planning'
+                        node_ref.planned_waypoints = node_ref.path_planner.plan_gentle_valley_path(
+                            (node_ref.point_a['x'], node_ref.point_a['y']),
+                            (node_ref.point_b['x'], node_ref.point_b['y'])
+                        )
+                        node_ref.path_status = 'Ready'
+                        res = {'status': 'success', 'waypoints': len(node_ref.planned_waypoints)}
+                    elif self.path == '/api/start_navigation':
+                        node_ref.start_navigation()
+                        res = {'status': 'success', 'state': node_ref.path_status}
+                    elif self.path == '/api/stop':
+                        node_ref.stop_navigation()
+                        res = {'status': 'success', 'state': node_ref.path_status}
+                    elif self.path == '/api/reset':
+                        node_ref.reset_navigation()
+                        res = {'status': 'success', 'state': node_ref.path_status}
+                    elif self.path == '/api/recover_robot':
+                        node_ref.stability_status = 'RECOVERED'
+                        burst = Twist()
+                        burst.linear.x = 0.5
+                        burst.angular.z = 1.5
+                        node_ref.cmd_pub.publish(burst)
+                        res = {'status': 'success', 'message': 'Flip recovery maneuver executed'}
+                    else:
+                        res = {'status': 'unknown_endpoint'}
+                except Exception as err:
+                    res = {'status': 'error', 'message': str(err)}
 
+                body = json.dumps(res).encode('utf-8')
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/json')
+                self.send_header('Content-Length', str(len(body)))
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
-                self.wfile.write(json.dumps(res).encode('utf-8'))
+                self.wfile.write(body)
 
         def run_server():
             try:
