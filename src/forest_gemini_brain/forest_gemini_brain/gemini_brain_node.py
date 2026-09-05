@@ -271,15 +271,21 @@ Identify any obstacles (rocks, blocks, barriers, steep terrain) and output the o
             right_ranges = []
 
             for i, r in enumerate(scan_msg.ranges):
-                if max(scan_msg.range_min, 0.35) < r < scan_msg.range_max:
+                if scan_msg.range_min < r < scan_msg.range_max:
                     ang = angle_min + i * angle_inc
                     ang_deg = math.degrees(ang)
 
+                    # Filter robot's own chassis / track footprint:
+                    if r < 0.55 and abs(ang_deg) > 20.0:
+                        continue
+                    if r < 0.38 and abs(ang_deg) <= 20.0:
+                        continue
+
                     if -18.0 <= ang_deg <= 18.0:
                         center_ranges.append(r)
-                    elif 18.0 < ang_deg <= 65.0:
+                    elif 18.0 < ang_deg <= 55.0:
                         left_ranges.append(r)
-                    elif -65.0 <= ang_deg < -18.0:
+                    elif -55.0 <= ang_deg < -18.0:
                         right_ranges.append(r)
 
             if center_ranges:
@@ -315,16 +321,16 @@ Identify any obstacles (rocks, blocks, barriers, steep terrain) and output the o
                 'risk_level': 'CRITICAL',
                 'position': 'CENTER_PATH'
             })
-            if right_clearance > left_clearance:
+            if right_clearance >= left_clearance:
                 action = 'BYPASS_RIGHT'
-                steering_bias = -0.75  # Hard right turn
-                speed_rec = 0.15
-                reasoning = f"CRITICAL HAZARD ({center_clearance:.2f}m directly ahead). Hard right bypass turn into open corridor ({right_clearance:.1f}m free space)."
+                steering_bias = -0.55
+                speed_rec = 0.25
+                reasoning = f"CRITICAL HAZARD ({center_clearance:.2f}m directly ahead). Right bypass into open corridor ({right_clearance:.1f}m free space)."
             else:
                 action = 'BYPASS_LEFT'
-                steering_bias = 0.75   # Hard left turn
-                speed_rec = 0.15
-                reasoning = f"CRITICAL HAZARD ({center_clearance:.2f}m directly ahead). Hard left bypass turn into open corridor ({left_clearance:.1f}m free space)."
+                steering_bias = 0.55
+                speed_rec = 0.25
+                reasoning = f"CRITICAL HAZARD ({center_clearance:.2f}m directly ahead). Left bypass into open corridor ({left_clearance:.1f}m free space)."
 
         # CAUTION / EVASION ZONE: Obstacle ahead between 0.7m and 2.5m
         elif center_clearance < 2.50 or camera_hazard_detected:
@@ -337,31 +343,30 @@ Identify any obstacles (rocks, blocks, barriers, steep terrain) and output the o
             # Intelligently pick side with maximum open clearance
             if right_clearance >= left_clearance:
                 action = 'BYPASS_RIGHT'
-                # Smooth progressive steering bias
-                steering_bias = -np.clip(0.40 + (2.50 - center_clearance) * 0.25, 0.30, 0.80)
-                speed_rec = max(0.20, 0.38 * (center_clearance / 2.50))
+                steering_bias = -np.clip(0.30 + (2.50 - center_clearance) * 0.15, 0.20, 0.55)
+                speed_rec = max(0.35, 0.60 * (center_clearance / 2.50))
                 reasoning = f"Obstacle detected at {center_clearance:.2f}m in center path. Right corridor has superior clearance ({right_clearance:.1f}m). Smoothly steering right to bypass."
             else:
                 action = 'BYPASS_LEFT'
-                steering_bias = np.clip(0.40 + (2.50 - center_clearance) * 0.25, 0.30, 0.80)
-                speed_rec = max(0.20, 0.38 * (center_clearance / 2.50))
+                steering_bias = np.clip(0.30 + (2.50 - center_clearance) * 0.15, 0.20, 0.55)
+                speed_rec = max(0.35, 0.60 * (center_clearance / 2.50))
                 reasoning = f"Obstacle detected at {center_clearance:.2f}m in center path. Left corridor has superior clearance ({left_clearance:.1f}m). Smoothly steering left to bypass."
 
-        # SIDE CLEARANCE ASSIST: Clear center but obstacle close to left or right flank
-        elif left_clearance < 0.90:
+        # SIDE CLEARANCE ASSIST: Clear center but obstacle close to left or right flank (< 0.65m)
+        elif left_clearance < 0.65:
             action = 'BYPASS_RIGHT'
-            steering_bias = -0.25
-            speed_rec = 0.40
+            steering_bias = -0.15
+            speed_rec = 0.55
             reasoning = f"Left side obstacle at {left_clearance:.2f}m. Biasing steering slightly right for safe clearance margin."
-        elif right_clearance < 0.90:
+        elif right_clearance < 0.65:
             action = 'BYPASS_LEFT'
-            steering_bias = 0.25
-            speed_rec = 0.40
+            steering_bias = 0.15
+            speed_rec = 0.55
             reasoning = f"Right side obstacle at {right_clearance:.2f}m. Biasing steering slightly left for safe clearance margin."
         else:
             action = 'FOLLOW_PATH'
             steering_bias = 0.0
-            speed_rec = 0.45
+            speed_rec = 0.75
             reasoning = "Corridor is clear of obstacles. Pure pursuit following planned terrain waypoints."
 
         latency_ms = round((time.time() - start_t) * 1000 + 1.2, 1)

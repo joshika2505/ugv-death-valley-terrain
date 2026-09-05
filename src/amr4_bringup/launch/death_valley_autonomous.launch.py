@@ -24,6 +24,9 @@ def generate_launch_description():
     rviz = LaunchConfiguration('rviz', default='true')
     auto_nav = LaunchConfiguration('auto_nav', default='false')
 
+    launch_nav2 = LaunchConfiguration('launch_nav2', default='false')
+    launch_ugv_nav = LaunchConfiguration('launch_ugv_nav', default='false')
+
     rviz_config = os.path.join(pkg_amr4_bringup, 'rviz', 'amr4_perception.rviz')
 
     gazebo_bringup = IncludeLaunchDescription(
@@ -42,7 +45,8 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(pkg_amr4_nav, 'launch', 'navigation.launch.py')
         ),
-        launch_arguments={'use_sim_time': 'true'}.items()
+        launch_arguments={'use_sim_time': 'true'}.items(),
+        condition=IfCondition(launch_nav2)
     )
 
     rviz_node = Node(
@@ -91,21 +95,6 @@ def generate_launch_description():
         output='screen'
     )
 
-    try:
-        pkg_ugv_nav = get_package_share_directory('autonomous_ugv_nav')
-        renz_ugv_nav = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(pkg_ugv_nav, 'launch', 'ugv_navigation.launch.py')
-            ),
-            launch_arguments={
-                'use_sim_time': 'true',
-                'pointcloud_topic': '/scan'
-            }.items()
-        )
-        renz_action = [TimerAction(period=3.5, actions=[renz_ugv_nav])]
-    except Exception:
-        renz_action = []
-
     return LaunchDescription([
         DeclareLaunchArgument('start_x', default_value='0.0', description='Point A X coordinate (Start)'),
         DeclareLaunchArgument('start_y', default_value='0.0', description='Point A Y coordinate (Start)'),
@@ -116,11 +105,13 @@ def generate_launch_description():
         DeclareLaunchArgument('goal_yaw', default_value='0.785', description='Point B Goal Yaw angle'),
         DeclareLaunchArgument('rviz', default_value='true', description='Launch RViz2'),
         DeclareLaunchArgument('camera_gui', default_value='false', description='Open standalone camera POV window'),
-        DeclareLaunchArgument('auto_nav', default_value='true', description='Auto-dispatch Point B goal'),
+        DeclareLaunchArgument('auto_nav', default_value='false', description='Auto-dispatch Point B goal'),
+        DeclareLaunchArgument('launch_nav2', default_value='false', description='Launch experimental Nav2 lifecycle stack'),
+        DeclareLaunchArgument('launch_ugv_nav', default_value='false', description='Launch secondary MPPI stack'),
 
         gazebo_bringup,
         TimerAction(period=2.0, actions=[autonomy_node]),
         TimerAction(period=2.5, actions=[gemini_brain_node]),
         TimerAction(period=3.0, actions=[nav_bringup]),
-        TimerAction(period=5.0, actions=[rviz_node, perception_node])
-    ] + renz_action)
+        TimerAction(period=4.0, actions=[rviz_node, perception_node])
+    ])

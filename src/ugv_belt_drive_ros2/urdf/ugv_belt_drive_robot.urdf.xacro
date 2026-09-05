@@ -74,8 +74,8 @@
       <material name="matte_black"/>
     </visual>
     <collision>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <geometry><box size="${chassis_length} ${chassis_width} ${chassis_height}"/></geometry>
+      <origin xyz="0 0 0.03" rpy="0 0 0"/>
+      <geometry><box size="0.40 0.28 0.08"/></geometry>
     </collision>
     <xacro:box_inertia mass="${chassis_mass}" x="${chassis_length}" y="${chassis_width}" z="${chassis_height}"/>
   </link>
@@ -462,19 +462,18 @@
 
   <!-- ============================ 4-SPROCKET SKID-STEER DRIVE ============= -->
   <gazebo>
+    <!-- Front Sprocket Drive System -->
     <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
       <left_joint>left_front_sprocket_joint</left_joint>
-      <left_joint>left_rear_sprocket_joint</left_joint>
       <right_joint>right_front_sprocket_joint</right_joint>
-      <right_joint>right_rear_sprocket_joint</right_joint>
       <wheel_separation>${track_separation}</wheel_separation>
       <wheel_radius>${sprocket_radius}</wheel_radius>
-      <max_linear_acceleration>3.5</max_linear_acceleration>
-      <max_angular_acceleration>4.0</max_angular_acceleration>
-      <max_linear_velocity>2.0</max_linear_velocity>
-      <min_linear_velocity>-2.0</min_linear_velocity>
-      <max_angular_velocity>2.5</max_angular_velocity>
-      <min_angular_velocity>-2.5</min_angular_velocity>
+      <max_linear_acceleration>5.0</max_linear_acceleration>
+      <max_angular_acceleration>6.0</max_angular_acceleration>
+      <max_linear_velocity>2.5</max_linear_velocity>
+      <min_linear_velocity>-2.5</min_linear_velocity>
+      <max_angular_velocity>3.5</max_angular_velocity>
+      <min_angular_velocity>-3.5</min_angular_velocity>
       <topic>/cmd_vel</topic>
       <odom_topic>/odom</odom_topic>
       <frame_id>odom</frame_id>
@@ -482,32 +481,24 @@
       <odom_publish_frequency>50</odom_publish_frequency>
     </plugin>
 
-    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
-      <topic>/joint_states</topic>
-      <update_rate>30</update_rate>
-    </plugin>
-
-    <plugin name="skid_steer_drive" filename="libgazebo_ros_diff_drive.so">
-      <ros><namespace>/ugv</namespace></ros>
-      <update_rate>50</update_rate>
-      <num_wheel_pairs>2</num_wheel_pairs>
-      <left_joint>left_front_sprocket_joint</left_joint>
-      <right_joint>right_front_sprocket_joint</right_joint>
+    <!-- Rear Sprocket Drive System -->
+    <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
       <left_joint>left_rear_sprocket_joint</left_joint>
       <right_joint>right_rear_sprocket_joint</right_joint>
       <wheel_separation>${track_separation}</wheel_separation>
-      <wheel_separation>${track_separation}</wheel_separation>
-      <wheel_diameter>${2*sprocket_radius}</wheel_diameter>
-      <wheel_diameter>${2*sprocket_radius}</wheel_diameter>
-      <max_wheel_torque>28</max_wheel_torque>
-      <max_wheel_acceleration>2.5</max_wheel_acceleration>
-      <command_topic>cmd_vel</command_topic>
-      <odometry_topic>odom</odometry_topic>
-      <odometry_frame>odom</odometry_frame>
-      <robot_base_frame>base_footprint</robot_base_frame>
-      <publish_odom>true</publish_odom>
-      <publish_odom_tf>true</publish_odom_tf>
-      <publish_wheel_tf>true</publish_wheel_tf>
+      <wheel_radius>${sprocket_radius}</wheel_radius>
+      <max_linear_acceleration>5.0</max_linear_acceleration>
+      <max_angular_acceleration>6.0</max_angular_acceleration>
+      <max_linear_velocity>2.5</max_linear_velocity>
+      <min_linear_velocity>-2.5</min_linear_velocity>
+      <max_angular_velocity>3.5</max_angular_velocity>
+      <min_angular_velocity>-3.5</min_angular_velocity>
+      <topic>/cmd_vel</topic>
+    </plugin>
+
+    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+      <topic>/joint_states</topic>
+      <update_rate>30</update_rate>
     </plugin>
   </gazebo>
 

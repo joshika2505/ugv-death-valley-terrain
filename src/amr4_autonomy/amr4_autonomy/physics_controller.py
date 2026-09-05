@@ -17,7 +17,7 @@ class PhysicsBasedPathTracker:
         self.lookahead_dist_max = 2.5  # meters
         self.lookahead_gain = 1.2
         self.max_linear_speed = 1.2    # m/s
-        self.min_linear_speed = 0.30   # m/s
+        self.min_linear_speed = 0.35   # m/s (adequate torque for Death Valley terrain friction)
         self.max_angular_speed = 1.8   # rad/s
         self.max_accel = 1.2           # m/s^2
         self.max_decel = 1.5           # m/s^2
@@ -166,7 +166,7 @@ class PhysicsBasedPathTracker:
         # In-place pivot if heading error is large or tight bypass required
         heading_err = math.atan2(local_y, local_x)
         if abs(heading_err) > math.radians(45.0) or (min_clearance < 0.70 and abs(gemini_steering_bias) > 0.4):
-            cmd_v = 0.16
+            cmd_v = 0.28
             cmd_w = np.clip((heading_err * 2.0) + (gemini_steering_bias * 1.5), -self.max_angular_speed, self.max_angular_speed)
 
         return cmd_v, cmd_w, False, dist_to_goal, stability_status
