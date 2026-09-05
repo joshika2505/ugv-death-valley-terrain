@@ -478,21 +478,19 @@ class NavigationManagerNode(Node):
         self.point_a = {'x': float(x), 'y': float(y), 'z': float(z)}
         self.points_set['a'] = True
         self.get_logger().info(f'[PointSelector] Point A (Start) set to: ({x:.2f}, {y:.2f}, {z:.2f})')
+        self.trigger_plan_path(start_from_current=False, navigate_immediately=False)
 
     def set_point_b(self, x, y, z=None):
         if z is None:
             z = self.terrain_analyzer.get_surface_elevation(x, y)
         self.point_b = {'x': float(x), 'y': float(y), 'z': float(z)}
         self.points_set['b'] = True
-        dist = math.hypot(self.point_b['x'] - self.point_a['x'], self.point_b['y'] - self.point_a['y'])
-        self.get_logger().info(f'[PointSelector] Point B (Destination) set to: ({x:.2f}, {y:.2f}, {z:.2f}) | Dist: {dist:.2f}m')
+        dist = math.hypot(self.point_b['x'] - self.robot_pose[0], self.point_b['y'] - self.robot_pose[1])
+        self.get_logger().info(f'[PointSelector] Point B (Destination) set to: ({x:.2f}, {y:.2f}, {z:.2f}) | Dist from robot: {dist:.2f}m')
+        # Immediately plan route from robot's current pose to the new Point B
+        self.trigger_plan_path(start_from_current=True, navigate_immediately=False)
 
-    def trigger_plan_path(self, start_from_current=False):
-        """Runs the 3D Terrain A* Path Planner."""
-        if not self.points_set['b']:
-            return
-
-    def trigger_plan_path(self, start_from_current=False):
+    def trigger_plan_path(self, start_from_current=False, navigate_immediately=False):
         old_status = self.path_status
         rx, ry = self.robot_pose[0], self.robot_pose[1]
         if start_from_current:
@@ -504,17 +502,26 @@ class NavigationManagerNode(Node):
 
         self.get_logger().info(f'[PathPlanner] Planning 3D terrain route from {start_coord} to {goal_coord}...')
         self.planned_waypoints = self.path_planner.plan_path(start_coord, goal_coord)
-        if old_status == 'Navigating' or start_from_current:
+        
+        # Reset controller and stall watchdog states for fresh route
+        self.path_tracker.last_cmd_v = 0.0
+        self.path_tracker.last_time = time.time()
+        self.last_moving_pose = (rx, ry)
+        self.last_moving_time = time.time()
+        self.stuck_start_time = None
+        
+        if navigate_immediately or old_status == 'Navigating':
             self.path_status = 'Navigating'
         else:
             self.path_status = 'Ready'
-        self.get_logger().info(f'[PathPlanner] Route ready with {len(self.planned_waypoints)} safe 3D contour waypoints.')
+            
+        self.get_logger().info(f'[PathPlanner] Route ready with {len(self.planned_waypoints)} safe 3D contour waypoints (Status: {self.path_status}).')
 
     def start_navigation(self):
         rx, ry = self.robot_pose[0], self.robot_pose[1]
-        self.trigger_plan_path(start_from_current=True)
-        self.path_status = 'Navigating'
-        self.get_logger().info('[Navigation] Autonomous physics navigation started!')
+        dist_to_b = math.hypot(self.point_b['x'] - rx, self.point_b['y'] - ry)
+        self.get_logger().info(f'[Navigation] Starting autonomous physics navigation to Point B ({self.point_b["x"]:.1f}, {self.point_b["y"]:.1f}) | Dist: {dist_to_b:.2f}m')
+        self.trigger_plan_path(start_from_current=True, navigate_immediately=True)
 
     def stop_navigation(self):
         self.path_status = 'Ready'
@@ -526,6 +533,10 @@ class NavigationManagerNode(Node):
         self.path_status = 'Idle'
         self.planned_waypoints = []
         self.path_planner.clear_memory()
+        self.path_tracker.last_cmd_v = 0.0
+        self.last_moving_pose = (self.robot_pose[0], self.robot_pose[1])
+        self.last_moving_time = time.time()
+        self.stuck_start_time = None
         stop_cmd = Twist()
         self.cmd_pub.publish(stop_cmd)
         self.get_logger().info('[Navigation] Navigation state reset.')
