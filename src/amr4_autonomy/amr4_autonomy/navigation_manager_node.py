@@ -118,6 +118,7 @@ class NavigationManagerNode(Node):
             'speed_recommendation_mps': 0.45
         }
         self.gemini_bias = 0.0
+        self.reactive_obstacle_bias = 0.0
         self.gemini_key_pub = self.create_publisher(String, '/gemini/set_api_key', 10)
         self.sub_gemini_dec = self.create_subscription(String, '/gemini/decision', self.gemini_decision_cb, 10)
         self.sub_gemini_bias = self.create_subscription(Twist, '/gemini/nav_bias', self.gemini_bias_cb, 10)
@@ -128,8 +129,8 @@ class NavigationManagerNode(Node):
         self.sub_click = self.create_subscription(PointStamped, '/clicked_point', self.clicked_point_callback, 10)
         self.sub_init_pose = self.create_subscription(PoseWithCovarianceStamped, '/initialpose', self.initialpose_callback, 10)
         self.sub_goal_pose = self.create_subscription(PoseStamped, '/goal_pose', self.goalpose_callback, 10)
-        self.sub_cam = self.create_subscription(Image, '/camera/image_raw', self.camera_callback, 10)
-        self.sub_depth = self.create_subscription(Image, '/camera/depth/image_raw', self.depth_camera_callback, 10)
+        self.sub_cam = self.create_subscription(Image, '/camera/image_raw', self.camera_callback, qos_profile_sensor_data)
+        self.sub_depth = self.create_subscription(Image, '/camera/depth/image_raw', self.depth_camera_callback, qos_profile_sensor_data)
 
         # Main Navigation Control Loop (20 Hz)
         self.nav_timer = self.create_timer(0.05, self.control_loop)
@@ -240,32 +241,31 @@ class NavigationManagerNode(Node):
                 self.sector_clearances['closest'] = round(float(center_c), 2)
                 self.sector_clearances['closest_angle'] = 0.0
 
-            # Proactive Corridor Obstacle Avoidance (< 10m range)
-            if len(forward_obstacles) >= 2:
+            # Tactical Reactive Obstacle Steering Bias Calculation
+            # Left/Right/Center Corridor Clearance Assessment (< 2.5m)
+            if center_c < 2.0:
+                if left_c > right_c + 0.25:
+                    self.reactive_obstacle_bias = 0.75 # Steer Left
+                elif right_c > left_c + 0.25:
+                    self.reactive_obstacle_bias = -0.75 # Steer Right
+                else:
+                    self.reactive_obstacle_bias = 0.60 if left_c >= right_c else -0.60
+            elif left_c < 0.90:
+                self.reactive_obstacle_bias = -0.40 # Steer Right away from left margin
+            elif right_c < 0.90:
+                self.reactive_obstacle_bias = 0.40 # Steer Left away from right margin
+            else:
+                self.reactive_obstacle_bias = 0.0 # Corridor clear
+
+            # Register dynamic obstacles into A* memory for future replanning
+            if len(forward_obstacles) >= 2 and self.path_status == 'Navigating':
                 min_r, min_ang = min(forward_obstacles, key=lambda x: x[0])
-                rx, ry, ryaw = self.robot_pose
-                obs_world_x = rx + min_r * math.cos(ryaw + min_ang)
-                obs_world_y = ry + min_r * math.sin(ryaw + min_ang)
-
-                # Register obstacle into A* planner with safety margin
-                obs_radius = max(0.85, 1.20 - 0.04 * min_r)
-                self.path_planner.add_obstacle(obs_world_x, obs_world_y, radius=obs_radius)
-
-                # Check if obstacle blocks upcoming planned path
-                blocks_path = False
-                for wp in self.planned_waypoints[:12]:
-                    if math.hypot(wp['x'] - obs_world_x, wp['y'] - obs_world_y) < (obs_radius + 0.5):
-                        blocks_path = True
-                        break
-
-                now_t = time.time()
-                # Replan immediately if obstacle is in corridor or within close distance (< 1.4m)
-                if (blocks_path or min_r < 1.4) and self.path_status in ['Navigating', 'Ready'] and (not hasattr(self, 'last_replan_time') or (now_t - self.last_replan_time > 1.0)):
-                    self.last_replan_time = now_t
-                    self.get_logger().warn(f'[IntelligentLiDAR] Obstacle at {min_r:.2f}m ({obs_world_x:.1f}, {obs_world_y:.1f})! Re-routing path dynamically...')
-                    self.trigger_plan_path(start_from_current=True)
-                    if self.path_status != 'Ready':
-                        self.path_status = 'Navigating'
+                if min_r < 4.0:
+                    rx, ry, ryaw = self.robot_pose
+                    obs_world_x = rx + min_r * math.cos(ryaw + min_ang)
+                    obs_world_y = ry + min_r * math.sin(ryaw + min_ang)
+                    obs_radius = max(0.85, 1.20 - 0.04 * min_r)
+                    self.path_planner.add_obstacle(obs_world_x, obs_world_y, radius=obs_radius)
 
     def _perception_worker(self):
         """Asynchronous background worker for 3D depth and traversability inference."""
@@ -284,32 +284,16 @@ class NavigationManagerNode(Node):
                     self.latest_perception_result = result
 
                     # Register lethal obstacles for dynamic avoidance
-                    if result.obstacles:
-                        needs_replan = False
+                    if result.obstacles and self.path_status == 'Navigating':
                         for obs in result.obstacles:
-                            if not obs.is_run_over_allowed and obs.radial_distance_m < 7.0:
+                            if not obs.is_run_over_allowed and obs.radial_distance_m < 6.0:
                                 rx, ry, ryaw = self.robot_pose
                                 obs_x = rx + obs.centroid_x * math.cos(ryaw) - obs.centroid_y * math.sin(ryaw)
                                 obs_y = ry + obs.centroid_x * math.sin(ryaw) + obs.centroid_y * math.cos(ryaw)
-                                
-                                obs_radius = max(1.1, obs.width_m/2.0 + 0.5)
+                                obs_radius = max(1.0, obs.width_m/2.0 + 0.4)
                                 self.path_planner.add_obstacle(obs_x, obs_y, radius=obs_radius)
 
-                                # Proactively check if 3D vision obstacle intersects path
-                                for wp in self.planned_waypoints[:12]:
-                                    if math.hypot(wp['x'] - obs_x, wp['y'] - obs_y) < (obs_radius + 0.6):
-                                        needs_replan = True
-                                        break
-
-                        now_t = time.time()
-                        if needs_replan and self.path_status in ['Navigating', 'Ready'] and (not hasattr(self, 'last_replan_time') or (now_t - self.last_replan_time > 1.2)):
-                            self.last_replan_time = now_t
-                            self.get_logger().warn(f'[Intelligent3DPerception] Lethal obstacle blocking path! Computing dynamic detour...')
-                            self.trigger_plan_path(start_from_current=True)
-                            if self.path_status != 'Ready':
-                                self.path_status = 'Navigating'
-
-                        self.publish_perception_markers(result)
+                    self.publish_perception_markers(result)
             except Exception as e:
                 pass
             time.sleep(0.1) # 10 Hz perception rate
@@ -521,7 +505,15 @@ class NavigationManagerNode(Node):
         rx, ry = self.robot_pose[0], self.robot_pose[1]
         dist_to_b = math.hypot(self.point_b['x'] - rx, self.point_b['y'] - ry)
         self.get_logger().info(f'[Navigation] Starting autonomous physics navigation to Point B ({self.point_b["x"]:.1f}, {self.point_b["y"]:.1f}) | Dist: {dist_to_b:.2f}m')
-        self.trigger_plan_path(start_from_current=True, navigate_immediately=True)
+        if not self.planned_waypoints or len(self.planned_waypoints) < 2 or self.path_status == 'Completed':
+            self.trigger_plan_path(start_from_current=True, navigate_immediately=True)
+        else:
+            self.path_status = 'Navigating'
+            self.path_tracker.last_cmd_v = 0.0
+            self.path_tracker.last_time = time.time()
+            self.last_moving_pose = (rx, ry)
+            self.last_moving_time = time.time()
+            self.stuck_start_time = None
 
     def stop_navigation(self):
         self.path_status = 'Ready'
@@ -583,14 +575,14 @@ class NavigationManagerNode(Node):
             if elapsed < 2.0:
                 # Phase 1: Reverse backward to detach from rock/crater/slope
                 bk = Twist()
-                bk.linear.x = -0.35
+                bk.linear.x = -0.40
                 self.cmd_pub.publish(bk)
                 return
             elif elapsed < 3.8:
                 # Phase 2: In-place pivot towards clearer corridor
                 pivot = Twist()
-                pivot.linear.x = 0.12
-                pivot.angular.z = 0.85 if self.stuck_escape_dir == 'LEFT' else -0.85
+                pivot.linear.x = 0.10
+                pivot.angular.z = 1.0 if self.stuck_escape_dir == 'LEFT' else -1.0
                 self.cmd_pub.publish(pivot)
                 return
             else:
@@ -598,8 +590,7 @@ class NavigationManagerNode(Node):
                 self.get_logger().info(f'[StuckRecovery] Escape complete. Re-routing around obstacle corridor...')
                 self.last_moving_pose = (self.robot_pose[0], self.robot_pose[1])
                 self.last_moving_time = now_sec
-                self.trigger_plan_path(start_from_current=True)
-                self.path_status = 'Navigating'
+                self.trigger_plan_path(start_from_current=True, navigate_immediately=True)
                 return
 
         if self.path_status != 'Navigating' or len(self.planned_waypoints) == 0:
@@ -608,7 +599,7 @@ class NavigationManagerNode(Node):
         # 4. 4-Second Immobilization / Stall Watchdog
         rx, ry, _ = self.robot_pose
         dist_moved = math.hypot(rx - self.last_moving_pose[0], ry - self.last_moving_pose[1])
-        if dist_moved > 0.10 or self.robot_speed > 0.12:
+        if dist_moved > 0.08 or self.robot_speed > 0.10:
             self.last_moving_pose = (rx, ry)
             self.last_moving_time = now_sec
         else:
@@ -617,7 +608,7 @@ class NavigationManagerNode(Node):
                 lc = self.sector_clearances.get('left', 10.0)
                 rc = self.sector_clearances.get('right', 10.0)
                 cc = self.sector_clearances.get('center', 10.0)
-                self.stuck_escape_dir = 'LEFT' if lc > rc else 'RIGHT'
+                self.stuck_escape_dir = 'LEFT' if lc >= rc else 'RIGHT'
                 
                 self.get_logger().warn(
                     f'[StallWatchdog] Bot immobilized for {stalled_time:.1f}s (> 4.0s)! '
@@ -629,13 +620,14 @@ class NavigationManagerNode(Node):
                 # Register stuck zone into A* planner memory
                 self.path_planner.add_failed_climb_region(rx, ry, radius=2.5, penalty=500.0)
                 bk = Twist()
-                bk.linear.x = -0.35
+                bk.linear.x = -0.40
                 self.cmd_pub.publish(bk)
                 return
 
+        total_bias = self.gemini_bias + self.reactive_obstacle_bias
         cmd_v, cmd_w, arrived, dist_rem, stab_status = self.path_tracker.compute_control(
             self.robot_pose, (self.robot_pitch, self.robot_roll), self.planned_waypoints, now_sec,
-            gemini_steering_bias=self.gemini_bias, min_clearance=self.min_clearance
+            gemini_steering_bias=total_bias, min_clearance=self.min_clearance
         )
         self.distance_remaining = dist_rem
         self.stability_status = stab_status

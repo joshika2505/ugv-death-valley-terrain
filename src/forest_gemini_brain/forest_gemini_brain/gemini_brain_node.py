@@ -22,6 +22,7 @@ import io
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Image, LaserScan
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
@@ -92,8 +93,8 @@ class GeminiBrainNode(Node):
         self.init_gemini_client()
 
         # Subscriptions
-        self.create_subscription(Image, '/camera/image_raw', self.image_callback, 10)
-        self.create_subscription(LaserScan, '/scan', self.scan_callback, 10)
+        self.create_subscription(Image, '/camera/image_raw', self.image_callback, qos_profile_sensor_data)
+        self.create_subscription(LaserScan, '/scan', self.scan_callback, qos_profile_sensor_data)
         self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
         self.create_subscription(String, '/gemini/set_api_key', self.set_key_callback, 10)
 

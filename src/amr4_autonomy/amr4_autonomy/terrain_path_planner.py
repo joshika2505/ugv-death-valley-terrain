@@ -56,6 +56,48 @@ class TerrainPathPlanner:
         if dynamic_obs:
             obs_list.extend(dynamic_obs)
 
+        # Precompute obstacle penalty & blocked grid for fast O(1) lookups during A*
+        blocked_grid = np.zeros((self.ta.grid_h, self.ta.grid_w), dtype=bool)
+        obs_cost_grid = np.zeros((self.ta.grid_h, self.ta.grid_w), dtype=np.float32)
+
+        for (ox, oy, orad) in obs_list:
+            cx = int(round((ox - min_x) / res))
+            cy = int(round((oy - min_y) / res))
+            r_repulse = int(math.ceil((orad + 2.0) / res))
+
+            x0 = max(0, cx - r_repulse)
+            x1 = min(self.ta.grid_w, cx + r_repulse + 1)
+            y0 = max(0, cy - r_repulse)
+            y1 = min(self.ta.grid_h, cy + r_repulse + 1)
+
+            for gy_i in range(y0, y1):
+                for gx_i in range(x0, x1):
+                    wx = min_x + gx_i * res
+                    wy = min_y + gy_i * res
+                    d_obs = math.hypot(wx - ox, wy - oy)
+                    if d_obs < (orad + 0.35):
+                        blocked_grid[gy_i, gx_i] = True
+                    elif d_obs < (orad + 2.0):
+                        obs_cost_grid[gy_i, gx_i] += (2.0 - (d_obs - orad)) * 60.0
+
+        for (fx, fy, frad, fpen) in self.failed_climb_memory:
+            cx = int(round((fx - min_x) / res))
+            cy = int(round((fy - min_y) / res))
+            r_mem = int(math.ceil(frad / res))
+
+            x0 = max(0, cx - r_mem)
+            x1 = min(self.ta.grid_w, cx + r_mem + 1)
+            y0 = max(0, cy - r_mem)
+            y1 = min(self.ta.grid_h, cy + r_mem + 1)
+
+            for gy_i in range(y0, y1):
+                for gx_i in range(x0, x1):
+                    wx = min_x + gx_i * res
+                    wy = min_y + gy_i * res
+                    d_fail = math.hypot(wx - fx, wy - fy)
+                    if d_fail < frad:
+                        obs_cost_grid[gy_i, gx_i] += fpen * (1.0 - d_fail / frad)
+
         # Priority queue for A*
         open_set = []
         heapq.heappush(open_set, (0.0, start_idx))
@@ -94,37 +136,16 @@ class TerrainPathPlanner:
                     if slope > max_slope:
                         continue # Untraversable slope / cliff
 
-                    # 2. Dynamic Obstacle Clearance Check (Wide Safe Margin)
-                    wx = min_x + nx * res
-                    wy = min_y + ny * res
-                    blocked_by_obs = False
-                    obs_cost_penalty = 0.0
-
-                    for (ox, oy, orad) in obs_list:
-                        d_obs = math.hypot(wx - ox, wy - oy)
-                        if d_obs < (orad + 0.35):
-                            blocked_by_obs = True
-                            break
-                        elif d_obs < (orad + 2.0):
-                            # Smooth repulsive potential field around obstacle
-                            obs_cost_penalty += (2.0 - (d_obs - orad)) * 60.0
-
-                    if blocked_by_obs:
+                    # 2. Dynamic Obstacle Blockage Check
+                    if blocked_grid[ny, nx]:
                         continue
 
-                    # 3. Learning & Terrain Memory Penalty
-                    memory_cost_penalty = 0.0
-                    for (fx, fy, frad, fpen) in self.failed_climb_memory:
-                        d_fail = math.hypot(wx - fx, wy - fy)
-                        if d_fail < frad:
-                            memory_cost_penalty += fpen * (1.0 - d_fail / frad)
-
-                    # 4. Physical Transition Cost: 3D Distance + Slope + Roughness + Memory
+                    # 3. Physical Transition Cost: 3D Distance + Slope + Obstacles + Memory
                     step_dist = math.hypot(dx * res, dy * res)
                     dz = abs(self.ta.height_grid[ny, nx] - self.ta.height_grid[current[1], current[0]])
                     
                     slope_penalty = 1.0 + (slope / 14.0)**2
-                    cost = (step_dist + dz * 1.5) * slope_penalty + obs_cost_penalty + memory_cost_penalty
+                    cost = (step_dist + dz * 1.5) * slope_penalty + float(obs_cost_grid[ny, nx])
 
                     tentative_g = g_score[current] + cost
                     if neighbor not in g_score or tentative_g < g_score[neighbor]:
