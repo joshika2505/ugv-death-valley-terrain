@@ -122,8 +122,34 @@
                     </div>
                 </div>
 
+                <!-- Obstacle Radar & Sector Distance Telemetry Card -->
+                <div class="telemetry-card" style="margin-top: 12px; border-left: 3px solid #00d2ff; background: rgba(0, 210, 255, 0.06); padding: 12px; border-radius: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="color: #00d2ff; font-weight: 700; font-size: 0.85rem;">📡 360° LIDAR & CAMERA OBSTACLE DISTANCE RADAR</span>
+                        <span id="obs-detour-status" class="badge-tag" style="background: rgba(0, 255, 170, 0.25); color: #00ffaa; padding: 2px 6px; font-size: 0.7rem; border-radius: 3px;">CLEAR CORRIDOR</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center; margin-bottom: 8px;">
+                        <div style="background: rgba(0,0,0,0.4); padding: 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.08);">
+                            <div style="font-size: 0.68rem; color: #8fa3bf;">◄ LEFT SECTOR</div>
+                            <div id="val-obs-left" style="font-size: 0.95rem; font-weight: 700; color: #00d2ff; font-family: Orbitron;">> 5.0m</div>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.4); padding: 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.08);">
+                            <div style="font-size: 0.68rem; color: #8fa3bf;">▲ CENTER PATH</div>
+                            <div id="val-obs-center" style="font-size: 0.95rem; font-weight: 700; color: #00ffaa; font-family: Orbitron;">> 5.0m</div>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.4); padding: 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.08);">
+                            <div style="font-size: 0.68rem; color: #8fa3bf;">RIGHT SECTOR ►</div>
+                            <div id="val-obs-right" style="font-size: 0.95rem; font-weight: 700; color: #00d2ff; font-family: Orbitron;">> 5.0m</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #cfd9e8; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.25); padding: 6px 8px; border-radius: 4px;">
+                        <span>CLOSEST HAZARD: <strong id="val-obs-closest" style="color: #ffbb00; font-family: Orbitron;">--</strong></span>
+                        <span>UN-STUCK WATCHDOG: <strong id="val-stuck-watchdog" style="color: #00ffaa;">NORMAL (4.0s)</strong></span>
+                    </div>
+                </div>
+
                 <!-- Google Gemini AI Multimodal Brain Panel -->
-                <div class="telemetry-card gemini-card" style="margin-top: 15px; border-left: 3px solid #b05cff; background: rgba(176, 92, 255, 0.08); padding: 12px; border-radius: 6px;">
+                <div class="telemetry-card gemini-card" style="margin-top: 12px; border-left: 3px solid #b05cff; background: rgba(176, 92, 255, 0.08); padding: 12px; border-radius: 6px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <span style="color: #d8a8ff; font-weight: 700; font-size: 0.85rem;">🤖 GOOGLE GEMINI MULTIMODAL BRAIN (VLA)</span>
                         <span id="gemini-engine-badge" class="badge-tag" style="background: rgba(176, 92, 255, 0.3); color: #fff; padding: 2px 6px; font-size: 0.7rem; border-radius: 3px;">GEMINI VLA REFLEX</span>

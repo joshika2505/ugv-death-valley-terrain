@@ -88,9 +88,16 @@ class NavigationManagerNode(Node):
         self.robot_roll = 0.0
         self.distance_remaining = math.hypot(self.point_b['x'] - self.point_a['x'], self.point_b['y'] - self.point_a['y'])
         self.min_clearance = 10.0
+        self.sector_clearances = {'left': 10.0, 'center': 10.0, 'right': 10.0, 'closest': 10.0, 'closest_angle': 0.0}
         self.terrain_class_str = 'Safe'
         self.follow_robot_mode = False
         self.latest_camera_jpg = None
+
+        # 4-Second Stall & Stuck Watchdog State
+        self.last_moving_pose = (0.0, 0.0)
+        self.last_moving_time = time.time()
+        self.stuck_start_time = None
+        self.stuck_escape_dir = 'RIGHT' # 'LEFT' or 'RIGHT'
 
         # ROS 2 Publishers
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
@@ -182,44 +189,80 @@ class NavigationManagerNode(Node):
         self.gemini_bias = float(msg.angular.z)
 
     def scan_callback(self, msg):
-        valid = [r for r in msg.ranges if max(msg.range_min, 0.35) < r < msg.range_max]
+        valid = [r for r in msg.ranges if max(msg.range_min, 0.10) < r < msg.range_max]
         if valid:
             self.min_clearance = min(valid)
 
-        # Intelligent Dynamic Obstacle Perception & Proactive Detour Trigger
         num_readings = len(msg.ranges)
         if num_readings > 0:
             angle_min = msg.angle_min
             angle_inc = msg.angle_increment
+            
+            left_ranges = []
+            center_ranges = []
+            right_ranges = []
             forward_obstacles = []
             
             for i, r in enumerate(msg.ranges):
-                if 0.45 < r < 3.5: # Wide forward obstacle detection up to 3.5m
-                    angle = angle_min + i * angle_inc
-                    if abs(angle) < math.radians(50.0): # 100 deg forward cone
-                        forward_obstacles.append((r, angle))
+                if max(msg.range_min, 0.10) < r < msg.range_max:
+                    ang = angle_min + i * angle_inc
+                    ang_deg = math.degrees(ang)
 
-            if len(forward_obstacles) >= 3:
-                # Find closest obstacle distance and angle
+                    # Filter robot's own chassis / tracks footprint
+                    if r < 0.55 and abs(ang_deg) > 20.0:
+                        continue
+                    if r < 0.35 and abs(ang_deg) <= 20.0:
+                        continue
+
+                    if -18.0 <= ang_deg <= 18.0:
+                        center_ranges.append(r)
+                    elif 18.0 < ang_deg <= 60.0:
+                        left_ranges.append(r)
+                    elif -60.0 <= ang_deg < -18.0:
+                        right_ranges.append(r)
+
+                    if 0.10 <= r <= 10.0 and abs(ang_deg) <= 55.0:
+                        forward_obstacles.append((r, ang))
+
+            left_c = min(left_ranges) if left_ranges else 10.0
+            center_c = min(center_ranges) if center_ranges else 10.0
+            right_c = min(right_ranges) if right_ranges else 10.0
+
+            self.sector_clearances['left'] = round(float(left_c), 2)
+            self.sector_clearances['center'] = round(float(center_c), 2)
+            self.sector_clearances['right'] = round(float(right_c), 2)
+
+            if forward_obstacles:
+                min_r, min_ang = min(forward_obstacles, key=lambda x: x[0])
+                self.sector_clearances['closest'] = round(float(min_r), 2)
+                self.sector_clearances['closest_angle'] = round(float(math.degrees(min_ang)), 1)
+            else:
+                self.sector_clearances['closest'] = round(float(center_c), 2)
+                self.sector_clearances['closest_angle'] = 0.0
+
+            # Proactive Corridor Obstacle Avoidance (< 10m range)
+            if len(forward_obstacles) >= 2:
                 min_r, min_ang = min(forward_obstacles, key=lambda x: x[0])
                 rx, ry, ryaw = self.robot_pose
                 obs_world_x = rx + min_r * math.cos(ryaw + min_ang)
                 obs_world_y = ry + min_r * math.sin(ryaw + min_ang)
 
-                # Register obstacle into A* planner
-                self.path_planner.add_obstacle(obs_world_x, obs_world_y, radius=1.1)
+                # Register obstacle into A* planner with safety margin
+                obs_radius = max(0.85, 1.20 - 0.04 * min_r)
+                self.path_planner.add_obstacle(obs_world_x, obs_world_y, radius=obs_radius)
 
-                # Check if obstacle blocks upcoming planned waypoints
+                # Check if obstacle blocks upcoming planned path
                 blocks_path = False
-                for wp in self.planned_waypoints[:10]:
-                    if math.hypot(wp['x'] - obs_world_x, wp['y'] - obs_world_y) < 1.4:
+                for wp in self.planned_waypoints[:12]:
+                    if math.hypot(wp['x'] - obs_world_x, wp['y'] - obs_world_y) < (obs_radius + 0.5):
                         blocks_path = True
                         break
 
                 now_t = time.time()
-                if blocks_path and self.path_status in ['Navigating', 'Ready'] and (not hasattr(self, 'last_replan_time') or (now_t - self.last_replan_time > 1.2)):
+                # Replan immediately if obstacle is in corridor or within close distance (< 1.4m)
+                if (blocks_path or min_r < 1.4) and self.path_status in ['Navigating', 'Ready'] and (not hasattr(self, 'last_replan_time') or (now_t - self.last_replan_time > 1.0)):
                     self.last_replan_time = now_t
-                    self.get_logger().warn(f'[IntelligentLiDAR] Obstacle at {min_r:.2f}m ({obs_world_x:.1f}, {obs_world_y:.1f}) in path corridor! Re-routing around obstacle...')
+                    self.get_logger().warn(f'[IntelligentLiDAR] Obstacle at {min_r:.2f}m ({obs_world_x:.1f}, {obs_world_y:.1f})! Re-routing path dynamically...')
                     self.trigger_plan_path(start_from_current=True)
                     if self.path_status != 'Ready':
                         self.path_status = 'Navigating'
@@ -306,22 +349,69 @@ class NavigationManagerNode(Node):
                     cv2.putText(cv_img, tag, (u_min, max(20, v_min - 6)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, box_color, 1)
 
             # Visual HUD Overlay
-            # 1. Horizon & Center Reticle
+            # 1. Center Horizon Reticle
             cv2.line(cv_img, (w//2 - 25, h//2), (w//2 + 25, h//2), (0, 255, 136), 1)
             cv2.line(cv_img, (w//2, h//2 - 25), (w//2, h//2 + 25), (0, 255, 136), 1)
 
             # 2. Header Telemetry Banner
             status_txt = f"MODE: {self.path_status.upper()} | SPD: {self.robot_speed:.2f} m/s | REMAIN: {self.distance_remaining:.1f}m"
-            cv2.rectangle(cv_img, (10, 10), (w - 10, 42), (15, 20, 25), -1)
-            cv2.rectangle(cv_img, (10, 10), (w - 10, 42), (0, 210, 255), 1)
-            cv2.putText(cv_img, status_txt, (20, 32), cv2.FONT_HERSHEY_SIMPLEX, 0.52, (0, 210, 255), 2)
+            cv2.rectangle(cv_img, (10, 10), (w - 10, 40), (12, 16, 22), -1)
+            cv2.rectangle(cv_img, (10, 10), (w - 10, 40), (0, 210, 255), 1)
+            cv2.putText(cv_img, status_txt, (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (0, 210, 255), 2)
 
-            # 3. Bottom Clearance & Terrain Banner
+            # 3. 3-Corridor LiDAR Distance Radar Bar
+            lc = self.sector_clearances.get('left', 10.0)
+            cc = self.sector_clearances.get('center', 10.0)
+            rc = self.sector_clearances.get('right', 10.0)
+            radar_txt = f"LIDAR DIST:  [L] {lc:.2f}m  |  [C] {cc:.2f}m  |  [R] {rc:.2f}m"
+            cv2.rectangle(cv_img, (10, 46), (w - 10, 72), (12, 16, 22), -1)
+            cv2.rectangle(cv_img, (10, 46), (w - 10, 72), (176, 92, 255), 1)
+            cv2.putText(cv_img, radar_txt, (20, 64), cv2.FONT_HERSHEY_SIMPLEX, 0.46, (220, 180, 255), 1)
+
+            # 4. Dynamic Obstacle Reticle & Distance Tag
+            closest_r = self.sector_clearances.get('closest', 10.0)
+            closest_ang = self.sector_clearances.get('closest_angle', 0.0)
+            
+            if closest_r < 8.0:
+                # Approximate horizontal pixel placement from angle
+                ang_norm = np.clip(closest_ang / 45.0, -1.0, 1.0)
+                obs_px = int(w/2 + ang_norm * (w/2.5))
+                obs_py = int(h * 0.70 - np.clip(closest_r / 7.0, 0.0, 1.0) * (h * 0.35))
+                
+                obs_color = (0, 50, 255) if closest_r < 1.0 else ((0, 180, 255) if closest_r < 2.5 else (0, 255, 136))
+                
+                # Draw targeting bracket around detected obstacle
+                bsize = max(18, int(45 / max(0.5, closest_r)))
+                cv2.rectangle(cv_img, (obs_px - bsize, obs_py - bsize), (obs_px + bsize, obs_py + bsize), obs_color, 2)
+                
+                obs_tag = f"HAZARD: {closest_r:.2f}m"
+                cv2.rectangle(cv_img, (obs_px - bsize, obs_py - bsize - 20), (obs_px + bsize + 40, obs_py - bsize), (10, 14, 20), -1)
+                cv2.putText(cv_img, obs_tag, (obs_px - bsize + 2, obs_py - bsize - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.42, obs_color, 1)
+
+            # 5. Evasion / AI Guidance Action Vector
+            g_act = self.gemini_data.get('action_decision', 'FOLLOW_PATH')
+            if 'LEFT' in g_act:
+                guidance_txt = f"<< ACTIVE EVASION: BYPASS LEFT (Margin: {lc:.1f}m)"
+                g_color = (0, 220, 255)
+            elif 'RIGHT' in g_act:
+                guidance_txt = f"ACTIVE EVASION: BYPASS RIGHT >> (Margin: {rc:.1f}m)"
+                g_color = (0, 220, 255)
+            elif 'REVERSE' in g_act or self.path_status in ['Reversing', 'Stuck_Recovering']:
+                guidance_txt = "!! STUCK RECOVERY: REVERSING & CLEARING PATH !!"
+                g_color = (0, 50, 255)
+            else:
+                guidance_txt = "PATH CLEAR -- PURE PURSUIT TRACKING"
+                g_color = (0, 255, 136)
+
+            cv2.rectangle(cv_img, (10, h - 70), (w - 10, h - 46), (12, 16, 22), -1)
+            cv2.putText(cv_img, guidance_txt, (20, h - 53), cv2.FONT_HERSHEY_SIMPLEX, 0.46, g_color, 2)
+
+            # 6. Bottom Clearance & Terrain Banner
             clr_color = (0, 255, 136) if self.min_clearance > 2.0 else ((0, 180, 255) if self.min_clearance > 1.0 else (0, 50, 255))
-            terr_txt = f"TERRAIN: {self.terrain_class_str.upper()} | CLEARANCE: {self.min_clearance:.2f}m"
-            cv2.rectangle(cv_img, (10, h - 45), (w - 10, h - 12), (15, 20, 25), -1)
-            cv2.rectangle(cv_img, (10, h - 45), (w - 10, h - 12), clr_color, 1)
-            cv2.putText(cv_img, terr_txt, (20, h - 22), cv2.FONT_HERSHEY_SIMPLEX, 0.52, clr_color, 2)
+            terr_txt = f"TERRAIN: {self.terrain_class_str.upper()} | MIN CLEARANCE: {self.min_clearance:.2f}m"
+            cv2.rectangle(cv_img, (10, h - 42), (w - 10, h - 12), (12, 16, 22), -1)
+            cv2.rectangle(cv_img, (10, h - 42), (w - 10, h - 12), clr_color, 1)
+            cv2.putText(cv_img, terr_txt, (20, h - 22), cv2.FONT_HERSHEY_SIMPLEX, 0.48, clr_color, 2)
 
             _, encoded = cv2.imencode('.jpg', cv_img, [cv2.IMWRITE_JPEG_QUALITY, 80])
             self.latest_camera_jpg = encoded.tobytes()
@@ -471,11 +561,66 @@ class NavigationManagerNode(Node):
                     (self.robot_pose[0], self.robot_pose[1]),
                     (self.point_b['x'], self.point_b['y'])
                 )
+                self.last_moving_pose = (self.robot_pose[0], self.robot_pose[1])
+                self.last_moving_time = now_sec
+                self.path_status = 'Navigating'
+                return
+
+        # 3. Multi-Phase Autonomous Stuck Recovery Maneuver (>4s Stall Escape)
+        if self.path_status == 'Stuck_Recovering':
+            elapsed = now_sec - getattr(self, 'stuck_start_time', now_sec)
+            if elapsed < 2.0:
+                # Phase 1: Reverse backward to detach from rock/crater/slope
+                bk = Twist()
+                bk.linear.x = -0.35
+                self.cmd_pub.publish(bk)
+                return
+            elif elapsed < 3.8:
+                # Phase 2: In-place pivot towards clearer corridor
+                pivot = Twist()
+                pivot.linear.x = 0.12
+                pivot.angular.z = 0.85 if self.stuck_escape_dir == 'LEFT' else -0.85
+                self.cmd_pub.publish(pivot)
+                return
+            else:
+                # Phase 3: Route replan from clear heading
+                self.get_logger().info(f'[StuckRecovery] Escape complete. Re-routing around obstacle corridor...')
+                self.last_moving_pose = (self.robot_pose[0], self.robot_pose[1])
+                self.last_moving_time = now_sec
+                self.trigger_plan_path(start_from_current=True)
                 self.path_status = 'Navigating'
                 return
 
         if self.path_status != 'Navigating' or len(self.planned_waypoints) == 0:
             return
+
+        # 4. 4-Second Immobilization / Stall Watchdog
+        rx, ry, _ = self.robot_pose
+        dist_moved = math.hypot(rx - self.last_moving_pose[0], ry - self.last_moving_pose[1])
+        if dist_moved > 0.10 or self.robot_speed > 0.12:
+            self.last_moving_pose = (rx, ry)
+            self.last_moving_time = now_sec
+        else:
+            stalled_time = now_sec - self.last_moving_time
+            if stalled_time > 4.0:
+                lc = self.sector_clearances.get('left', 10.0)
+                rc = self.sector_clearances.get('right', 10.0)
+                cc = self.sector_clearances.get('center', 10.0)
+                self.stuck_escape_dir = 'LEFT' if lc > rc else 'RIGHT'
+                
+                self.get_logger().warn(
+                    f'[StallWatchdog] Bot immobilized for {stalled_time:.1f}s (> 4.0s)! '
+                    f'Clearances: L={lc:.1f}m, C={cc:.1f}m, R={rc:.1f}m. '
+                    f'Triggering escape: REVERSE + PIVOT {self.stuck_escape_dir}...'
+                )
+                self.path_status = 'Stuck_Recovering'
+                self.stuck_start_time = now_sec
+                # Register stuck zone into A* planner memory
+                self.path_planner.add_failed_climb_region(rx, ry, radius=2.5, penalty=500.0)
+                bk = Twist()
+                bk.linear.x = -0.35
+                self.cmd_pub.publish(bk)
+                return
 
         cmd_v, cmd_w, arrived, dist_rem, stab_status = self.path_tracker.compute_control(
             self.robot_pose, (self.robot_pitch, self.robot_roll), self.planned_waypoints, now_sec,
@@ -668,6 +813,8 @@ class NavigationManagerNode(Node):
                         'robot_pitch': round(node_ref.robot_pitch, 1),
                         'robot_roll': round(node_ref.robot_roll, 1),
                         'min_clearance': round(node_ref.min_clearance, 2),
+                        'sector_clearances': getattr(node_ref, 'sector_clearances', {'left': 10.0, 'center': 10.0, 'right': 10.0, 'closest': 10.0, 'closest_angle': 0.0}),
+                        'stuck_status': getattr(node_ref, 'stuck_escape_dir', 'NONE') if node_ref.path_status == 'Stuck_Recovering' else 'NORMAL',
                         'terrain_class': node_ref.terrain_class_str,
                         'stability_status': getattr(node_ref, 'stability_status', 'NORMAL'),
                         'gemini': getattr(node_ref, 'gemini_data', {}),

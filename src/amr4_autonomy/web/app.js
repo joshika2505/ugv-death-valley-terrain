@@ -358,6 +358,63 @@ function fetchStatus() {
             document.getElementById('val-clearance').innerText = data.min_clearance > 10 ? '> 5.0 m' : data.min_clearance.toFixed(2) + ' m';
             document.getElementById('mission-badge').innerText = data.path_status.toUpperCase();
 
+            // Obstacle Radar & Sector Distances
+            if (data.sector_clearances) {
+                const sc = data.sector_clearances;
+                const leftEl = document.getElementById('val-obs-left');
+                const centerEl = document.getElementById('val-obs-center');
+                const rightEl = document.getElementById('val-obs-right');
+                const closestEl = document.getElementById('val-obs-closest');
+                const detourStatusEl = document.getElementById('obs-detour-status');
+                const stuckWatchdogEl = document.getElementById('val-stuck-watchdog');
+
+                if (leftEl) {
+                    leftEl.innerText = sc.left >= 10 ? '> 5.0m' : sc.left.toFixed(2) + 'm';
+                    leftEl.style.color = sc.left < 1.0 ? '#ff3366' : (sc.left < 2.5 ? '#ffbb00' : '#00d2ff');
+                }
+                if (centerEl) {
+                    centerEl.innerText = sc.center >= 10 ? '> 5.0m' : sc.center.toFixed(2) + 'm';
+                    centerEl.style.color = sc.center < 1.0 ? '#ff3366' : (sc.center < 2.5 ? '#ffbb00' : '#00ffaa');
+                }
+                if (rightEl) {
+                    rightEl.innerText = sc.right >= 10 ? '> 5.0m' : sc.right.toFixed(2) + 'm';
+                    rightEl.style.color = sc.right < 1.0 ? '#ff3366' : (sc.right < 2.5 ? '#ffbb00' : '#00d2ff');
+                }
+                if (closestEl) {
+                    if (sc.closest < 9.0) {
+                        closestEl.innerText = sc.closest.toFixed(2) + 'm (' + (sc.closest_angle < -10 ? 'RIGHT' : (sc.closest_angle > 10 ? 'LEFT' : 'CENTER')) + ')';
+                        closestEl.style.color = sc.closest < 1.0 ? '#ff3366' : (sc.closest < 2.5 ? '#ffbb00' : '#00ffaa');
+                    } else {
+                        closestEl.innerText = 'CLEAR (> 10m)';
+                        closestEl.style.color = '#00ffaa';
+                    }
+                }
+                if (detourStatusEl) {
+                    if (data.path_status === 'Stuck_Recovering') {
+                        detourStatusEl.innerText = 'STUCK ESCAPE ACTIVE';
+                        detourStatusEl.style.background = 'rgba(255, 51, 102, 0.3)';
+                        detourStatusEl.style.color = '#ff3366';
+                    } else if (sc.center < 1.8 || sc.closest < 1.8) {
+                        detourStatusEl.innerText = (sc.right >= sc.left ? 'EVADING RIGHT' : 'EVADING LEFT');
+                        detourStatusEl.style.background = 'rgba(255, 187, 0, 0.3)';
+                        detourStatusEl.style.color = '#ffbb00';
+                    } else {
+                        detourStatusEl.innerText = 'CLEAR CORRIDOR';
+                        detourStatusEl.style.background = 'rgba(0, 255, 170, 0.25)';
+                        detourStatusEl.style.color = '#00ffaa';
+                    }
+                }
+                if (stuckWatchdogEl) {
+                    if (data.path_status === 'Stuck_Recovering') {
+                        stuckWatchdogEl.innerText = 'REVERSING & PIVOTING';
+                        stuckWatchdogEl.style.color = '#ff3366';
+                    } else {
+                        stuckWatchdogEl.innerText = 'ARMED (4.0s)';
+                        stuckWatchdogEl.style.color = '#00ffaa';
+                    }
+                }
+            }
+
             // Ridge Block Warning Banner
             const ridgeAlert = document.getElementById('ridge-alert');
             if (ridgeAlert) {
