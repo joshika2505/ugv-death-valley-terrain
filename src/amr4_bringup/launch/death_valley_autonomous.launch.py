@@ -1,7 +1,7 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -26,6 +26,9 @@ def generate_launch_description():
 
     launch_nav2 = LaunchConfiguration('launch_nav2', default='false')
     launch_ugv_nav = LaunchConfiguration('launch_ugv_nav', default='false')
+
+    fastdds_cfg = os.path.join(pkg_amr4_bringup, 'config', 'fastdds_udp_only.xml')
+    set_fastdds = SetEnvironmentVariable(name='FASTRTPS_DEFAULT_PROFILES_FILE', value=fastdds_cfg)
 
     rviz_config = os.path.join(pkg_amr4_bringup, 'rviz', 'amr4_perception.rviz')
 
@@ -109,6 +112,7 @@ def generate_launch_description():
         DeclareLaunchArgument('launch_nav2', default_value='false', description='Launch experimental Nav2 lifecycle stack'),
         DeclareLaunchArgument('launch_ugv_nav', default_value='false', description='Launch secondary MPPI stack'),
 
+        set_fastdds,
         gazebo_bringup,
         TimerAction(period=2.0, actions=[autonomy_node]),
         TimerAction(period=2.5, actions=[gemini_brain_node]),
