@@ -2,10 +2,10 @@ const canvas = document.getElementById('terrainCanvas');
 const ctx = canvas.getContext('2d');
 
 let state = {
-    start_a: {x: 0.0, y: 0.0, z: 2.64},
+    start_a: {x: 0.0, y: 5.0, z: 0.08},
     destination_b: {x: 15.0, y: 15.0, z: 0.0},
-    distance_ab: 21.21,
-    distance_remaining: 21.21,
+    distance_ab: 18.03,
+    distance_remaining: 18.03,
     path_status: 'Ready',
     robot_speed: 0.0,
     robot_pose: {x: 0.0, y: 0.0, yaw: 0.0},

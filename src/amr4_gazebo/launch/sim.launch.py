@@ -13,9 +13,9 @@ def generate_launch_description():
     pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
 
     start_x = LaunchConfiguration('start_x', default='0.0')
-    start_y = LaunchConfiguration('start_y', default='0.0')
-    start_z = LaunchConfiguration('start_z', default='2.70')
-    start_yaw = LaunchConfiguration('start_yaw', default='0.0')
+    start_y = LaunchConfiguration('start_y', default='5.0')
+    start_z = LaunchConfiguration('start_z', default='0.20')
+    start_yaw = LaunchConfiguration('start_yaw', default='0.6')
 
     world_sdf = os.path.join(pkg_death_valley, 'worlds', 'death_valley.sdf')
     bridge_config = os.path.join(pkg_amr4_gazebo, 'config', 'ros_gz_bridge.yaml')

@@ -14,9 +14,9 @@ def generate_launch_description():
     pkg_amr4_autonomy = get_package_share_directory('amr4_autonomy')
 
     start_x = LaunchConfiguration('start_x', default='0.0')
-    start_y = LaunchConfiguration('start_y', default='0.0')
-    start_z = LaunchConfiguration('start_z', default='2.70')
-    start_yaw = LaunchConfiguration('start_yaw', default='0.0')
+    start_y = LaunchConfiguration('start_y', default='5.0')
+    start_z = LaunchConfiguration('start_z', default='0.20')
+    start_yaw = LaunchConfiguration('start_yaw', default='0.6')
     goal_x = LaunchConfiguration('goal_x', default='15.0')
     goal_y = LaunchConfiguration('goal_y', default='15.0')
     goal_yaw = LaunchConfiguration('goal_yaw', default='0.785')
@@ -100,9 +100,9 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('start_x', default_value='0.0', description='Point A X coordinate (Start)'),
-        DeclareLaunchArgument('start_y', default_value='0.0', description='Point A Y coordinate (Start)'),
-        DeclareLaunchArgument('start_z', default_value='2.80', description='Point A Z elevation'),
-        DeclareLaunchArgument('start_yaw', default_value='0.0', description='Point A Yaw orientation'),
+        DeclareLaunchArgument('start_y', default_value='5.0', description='Point A Y coordinate (Start)'),
+        DeclareLaunchArgument('start_z', default_value='0.20', description='Point A Z elevation'),
+        DeclareLaunchArgument('start_yaw', default_value='0.6', description='Point A Yaw orientation'),
         DeclareLaunchArgument('goal_x', default_value='15.0', description='Point B Goal X coordinate (Stop)'),
         DeclareLaunchArgument('goal_y', default_value='15.0', description='Point B Goal Y coordinate (Stop)'),
         DeclareLaunchArgument('goal_yaw', default_value='0.785', description='Point B Goal Yaw angle'),

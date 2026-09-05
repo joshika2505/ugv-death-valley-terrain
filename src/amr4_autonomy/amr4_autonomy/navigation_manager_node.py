@@ -75,7 +75,7 @@ class NavigationManagerNode(Node):
             self.perception_worker_thread.start()
 
         # State Variables
-        self.point_a = {'x': 0.0, 'y': 0.0, 'z': self.terrain_analyzer.get_surface_elevation(0.0, 0.0)}
+        self.point_a = {'x': 0.0, 'y': 5.0, 'z': self.terrain_analyzer.get_surface_elevation(0.0, 5.0)}
         self.point_b = {'x': 15.0, 'y': 15.0, 'z': self.terrain_analyzer.get_surface_elevation(15.0, 15.0)}
         self.points_set = {'a': True, 'b': True}
         self.selection_mode = 'NONE' # 'SET_A', 'SET_B', 'NONE'
@@ -380,8 +380,8 @@ class NavigationManagerNode(Node):
             elif 'RIGHT' in g_act:
                 guidance_txt = f"ACTIVE EVASION: BYPASS RIGHT >> (Margin: {rc:.1f}m)"
                 g_color = (0, 220, 255)
-            elif 'REVERSE' in g_act or self.path_status in ['Reversing', 'Stuck_Recovering']:
-                guidance_txt = "!! STUCK RECOVERY: REVERSING & CLEARING PATH !!"
+            elif 'REVERSE' in g_act or self.path_status in ['Obstacle_Escaping', 'Reversing', 'Stuck_Recovering']:
+                guidance_txt = "!! OBSTACLE ESCAPE: REVERSING 4 ROTATIONS & RE-ROUTING !!"
                 g_color = (0, 50, 255)
             else:
                 guidance_txt = "PATH CLEAR -- PURE PURSUIT TRACKING"
@@ -550,44 +550,35 @@ class NavigationManagerNode(Node):
                 self.cmd_pub.publish(stop_cmd)
                 return
 
-        # 2. Autonomous Reverse-and-Replan on Climb Failure
-        if self.path_status == 'Reversing':
-            if now_sec - getattr(self, 'reverse_start_time', now_sec) < 2.0:
-                bk = Twist()
-                bk.linear.x = -0.30
-                self.cmd_pub.publish(bk)
-                return
-            else:
-                self.get_logger().info('[ClimbRecovery] Reversal to safe terrain complete. Replanning alternative valley bypass...')
-                self.path_status = 'Replanning'
-                self.planned_waypoints = self.path_planner.plan_gentle_valley_path(
-                    (self.robot_pose[0], self.robot_pose[1]),
-                    (self.point_b['x'], self.point_b['y'])
-                )
-                self.last_moving_pose = (self.robot_pose[0], self.robot_pose[1])
-                self.last_moving_time = now_sec
-                self.path_status = 'Navigating'
-                return
+        # 2. Multi-Phase 4-Wheel-Rotation Obstacle Escape & Re-Route Maneuver
+        # Exactly 4 wheel rotations = 4 * 2 * pi * 0.065m = 1.63m backward displacement
+        if self.path_status in ['Obstacle_Escaping', 'Stuck_Recovering', 'Reversing']:
+            start_x, start_y = getattr(self, 'escape_start_pose', (self.robot_pose[0], self.robot_pose[1]))
+            dist_reversed = math.hypot(self.robot_pose[0] - start_x, self.robot_pose[1] - start_y)
+            elapsed = now_sec - getattr(self, 'escape_start_time', now_sec)
+            target_dist = getattr(self, 'escape_target_dist', 1.63)
 
-        # 3. Multi-Phase Autonomous Stuck Recovery Maneuver (>4s Stall Escape)
-        if self.path_status == 'Stuck_Recovering':
-            elapsed = now_sec - getattr(self, 'stuck_start_time', now_sec)
-            if elapsed < 2.0:
-                # Phase 1: Reverse backward to detach from rock/crater/slope
+            # Phase 1: Reverse backward for 4 wheel rotations (1.63m, max 3.8s)
+            if dist_reversed < target_dist and elapsed < 3.8:
                 bk = Twist()
-                bk.linear.x = -0.40
+                bk.linear.x = -0.42 # High-torque backward drive
                 self.cmd_pub.publish(bk)
                 return
-            elif elapsed < 3.8:
-                # Phase 2: In-place pivot towards clearer corridor
+            
+            # Phase 2: In-place pivot towards the clearer side corridor (1.0s)
+            elif elapsed < 4.8:
                 pivot = Twist()
-                pivot.linear.x = 0.10
-                pivot.angular.z = 1.0 if self.stuck_escape_dir == 'LEFT' else -1.0
+                pivot.linear.x = 0.08
+                pivot.angular.z = 1.15 if self.stuck_escape_dir == 'LEFT' else -1.15
                 self.cmd_pub.publish(pivot)
                 return
+            
+            # Phase 3: Route replan from clear heading and resume navigation
             else:
-                # Phase 3: Route replan from clear heading
-                self.get_logger().info(f'[StuckRecovery] Escape complete. Re-routing around obstacle corridor...')
+                self.get_logger().info(
+                    f'[ObstacleEscape] Backed up 4 wheel rotations ({dist_reversed:.2f}m / 1.63m) and pivoted {self.stuck_escape_dir}. '
+                    f'Replanning safe bypass route...'
+                )
                 self.last_moving_pose = (self.robot_pose[0], self.robot_pose[1])
                 self.last_moving_time = now_sec
                 self.trigger_plan_path(start_from_current=True, navigate_immediately=True)
@@ -596,8 +587,27 @@ class NavigationManagerNode(Node):
         if self.path_status != 'Navigating' or len(self.planned_waypoints) == 0:
             return
 
+        rx, ry, ryaw = self.robot_pose
+        lc = self.sector_clearances.get('left', 10.0)
+        rc = self.sector_clearances.get('right', 10.0)
+        cc = self.sector_clearances.get('center', 10.0)
+
+        # 3. Direct Obstacle Contact Watchdog (Hit obstacle < 0.55m in front)
+        if cc < 0.55 and self.robot_speed < 0.12:
+            self.get_logger().warn(f'[ObstacleHit] Front obstacle contact at {cc:.2f}m! Initiating 4-rotation reverse escape...')
+            self.path_status = 'Obstacle_Escaping'
+            self.escape_start_pose = (rx, ry)
+            self.escape_start_time = now_sec
+            self.escape_target_dist = 1.63
+            self.stuck_escape_dir = 'LEFT' if lc >= rc else 'RIGHT'
+            # Mark obstacle in planner memory
+            self.path_planner.add_obstacle(rx + 0.65 * math.cos(ryaw), ry + 0.65 * math.sin(ryaw), radius=1.2)
+            bk = Twist()
+            bk.linear.x = -0.42
+            self.cmd_pub.publish(bk)
+            return
+
         # 4. 4-Second Immobilization / Stall Watchdog
-        rx, ry, _ = self.robot_pose
         dist_moved = math.hypot(rx - self.last_moving_pose[0], ry - self.last_moving_pose[1])
         if dist_moved > 0.08 or self.robot_speed > 0.10:
             self.last_moving_pose = (rx, ry)
@@ -605,22 +615,19 @@ class NavigationManagerNode(Node):
         else:
             stalled_time = now_sec - self.last_moving_time
             if stalled_time > 4.0:
-                lc = self.sector_clearances.get('left', 10.0)
-                rc = self.sector_clearances.get('right', 10.0)
-                cc = self.sector_clearances.get('center', 10.0)
                 self.stuck_escape_dir = 'LEFT' if lc >= rc else 'RIGHT'
-                
                 self.get_logger().warn(
                     f'[StallWatchdog] Bot immobilized for {stalled_time:.1f}s (> 4.0s)! '
                     f'Clearances: L={lc:.1f}m, C={cc:.1f}m, R={rc:.1f}m. '
-                    f'Triggering escape: REVERSE + PIVOT {self.stuck_escape_dir}...'
+                    f'Triggering 4-rotation reverse escape ({self.stuck_escape_dir})...'
                 )
-                self.path_status = 'Stuck_Recovering'
-                self.stuck_start_time = now_sec
-                # Register stuck zone into A* planner memory
+                self.path_status = 'Obstacle_Escaping'
+                self.escape_start_pose = (rx, ry)
+                self.escape_start_time = now_sec
+                self.escape_target_dist = 1.63
                 self.path_planner.add_failed_climb_region(rx, ry, radius=2.5, penalty=500.0)
                 bk = Twist()
-                bk.linear.x = -0.40
+                bk.linear.x = -0.42
                 self.cmd_pub.publish(bk)
                 return
 
@@ -637,13 +644,15 @@ class NavigationManagerNode(Node):
         elif stab_status == 'ANTI_TIP_ACTIVE':
             self.get_logger().warn('[SafetyReflex] Steep side-slope detected! Engaging anti-tip stabilization...', throttle_duration_sec=1.5)
         elif stab_status == 'RIDGE_UNCLIMBABLE':
-            self.get_logger().warn('[ClimbFailure] Unscalable slope encountered! Initiating reverse-and-replan reflex...')
-            self.path_status = 'Reversing'
-            self.reverse_start_time = now_sec
-            # Add to terrain failure memory
-            self.path_planner.add_failed_climb_region(self.robot_pose[0], self.robot_pose[1], radius=3.5, penalty=350.0)
+            self.get_logger().warn('[ClimbFailure] Unscalable slope encountered! Initiating 4-rotation reverse escape...')
+            self.path_status = 'Obstacle_Escaping'
+            self.escape_start_pose = (rx, ry)
+            self.escape_start_time = now_sec
+            self.escape_target_dist = 1.63
+            self.stuck_escape_dir = 'LEFT' if lc >= rc else 'RIGHT'
+            self.path_planner.add_failed_climb_region(rx, ry, radius=3.0, penalty=400.0)
             bk = Twist()
-            bk.linear.x = -0.30
+            bk.linear.x = -0.42
             self.cmd_pub.publish(bk)
             return
 
