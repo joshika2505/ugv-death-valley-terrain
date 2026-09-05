@@ -15,7 +15,7 @@ def generate_launch_description():
     start_x = LaunchConfiguration('start_x', default='0.0')
     start_y = LaunchConfiguration('start_y', default='0.0')
     start_z = LaunchConfiguration('start_z', default='2.70')
-    start_yaw = LaunchConfiguration('start_yaw', default='0.6')
+    start_yaw = LaunchConfiguration('start_yaw', default='0.0')
 
     world_sdf = os.path.join(pkg_death_valley, 'worlds', 'death_valley.sdf')
     bridge_config = os.path.join(pkg_amr4_gazebo, 'config', 'ros_gz_bridge.yaml')

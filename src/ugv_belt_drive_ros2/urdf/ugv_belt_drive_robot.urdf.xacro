@@ -470,10 +470,15 @@
       <max_angular_velocity>4.5</max_angular_velocity>
       <min_angular_velocity>-4.5</min_angular_velocity>
       <topic>/cmd_vel</topic>
+    </plugin>
+
+    <!-- Real 3D Physical Ground-Truth Odometry (Synchronizes Gazebo physics 1:1 with RViz & Camera) -->
+    <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
       <odom_topic>/odom</odom_topic>
-      <frame_id>odom</frame_id>
-      <child_frame_id>base_footprint</child_frame_id>
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
       <odom_publish_frequency>50</odom_publish_frequency>
+      <dimensions>3</dimensions>
     </plugin>
 
     <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
