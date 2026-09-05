@@ -83,6 +83,14 @@ def generate_launch_description():
         output='screen'
     )
 
+    gemini_brain_node = Node(
+        package='forest_gemini_brain',
+        executable='gemini_brain_node',
+        name='gemini_brain_node',
+        parameters=[{'use_sim_time': True}],
+        output='screen'
+    )
+
     try:
         pkg_ugv_nav = get_package_share_directory('autonomous_ugv_nav')
         renz_ugv_nav = IncludeLaunchDescription(
@@ -112,6 +120,7 @@ def generate_launch_description():
 
         gazebo_bringup,
         TimerAction(period=2.0, actions=[autonomy_node]),
+        TimerAction(period=2.5, actions=[gemini_brain_node]),
         TimerAction(period=3.0, actions=[nav_bringup]),
         TimerAction(period=5.0, actions=[rviz_node, perception_node])
     ] + renz_action)

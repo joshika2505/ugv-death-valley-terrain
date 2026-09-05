@@ -119,8 +119,8 @@
     </joint>
 
     <gazebo reference="${side}_front_sprocket">
-      <mu1>2.5</mu1>
-      <mu2>2.5</mu2>
+      <mu1>1.8</mu1>
+      <mu2>0.05</mu2>
       <kp>1000000.0</kp>
       <kd>100.0</kd>
     </gazebo>
@@ -149,25 +149,21 @@
     </joint>
 
     <gazebo reference="${side}_rear_sprocket">
-      <mu1>2.5</mu1>
-      <mu2>2.5</mu2>
+      <mu1>1.8</mu1>
+      <mu2>0.05</mu2>
       <kp>1000000.0</kp>
       <kd>100.0</kd>
     </gazebo>
 
-    <!-- Track Belt Shell -->
+    <!-- Track Belt Shell (Visual only to avoid ground drag) -->
     <link name="${side}_belt">
       <visual>
         <origin xyz="0 0 ${-ground_clearance}" rpy="0 0 0"/>
         <geometry><mesh filename="${mesh_pkg}/track_belt.dae"/></geometry>
         <material name="matte_black"/>
       </visual>
-      <collision>
-        <origin xyz="0 0 ${-ground_clearance}" rpy="0 0 0"/>
-        <geometry><box size="${track_wheelbase} ${sprocket_width} ${2*sprocket_radius*0.9}"/></geometry>
-      </collision>
       <inertial>
-        <mass value="0.4"/>
+        <mass value="0.2"/>
         <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
       </inertial>
     </link>
@@ -243,7 +239,7 @@
   <joint name="lidar_joint" type="fixed">
     <parent link="base_link"/>
     <child link="lidar_link"/>
-    <origin xyz="-0.04 0 ${chassis_height/2 + 0.05}" rpy="0 0 0"/>
+    <origin xyz="0.08 0 ${chassis_height/2 + 0.10}" rpy="0 0 0"/>
   </joint>
 
   <gazebo reference="lidar_link">
@@ -262,7 +258,7 @@
           </horizontal>
         </scan>
         <range>
-          <min>0.15</min>
+          <min>0.30</min>
           <max>25.0</max>
           <resolution>0.01</resolution>
         </range>

@@ -34,27 +34,21 @@ class PhysicsBasedPathTracker:
         self.recovery_state = 'NORMAL' # 'NORMAL', 'STABILIZING', 'FLIPPED_RECOVERY'
         self.recovery_timer = 0.0
 
-    def compute_control(self, robot_pose, robot_posture, waypoints, current_time):
+    def compute_control(self, robot_pose, robot_posture, waypoints, current_time, gemini_steering_bias=0.0, min_clearance=10.0):
         """
-        Compute (linear_v, angular_w, arrival_status, distance_remaining, stability_mode).
-        robot_pose: (x, y, yaw)
-        robot_posture: (pitch_deg, roll_deg)
-        waypoints: list of {'x', 'y', 'z', 'slope', 'speed'} dicts
+        Computes robust (v, w) commands adapting to elevation slope, terrain roughness,
+        Gemini tactical AI bypass biases, and forward obstacle clearance.
         """
         pitch_deg, roll_deg = robot_posture
         abs_pitch = abs(pitch_deg)
         abs_roll = abs(roll_deg)
 
         # -------------------------------------------------------------
-        # 1. EMERGENCY ROLLOVER / FLIP DETECTION & RECOVERY REFLEX
+        # 1. TIPPING / ROLLOVER SAFETY WATCHDOG
         # -------------------------------------------------------------
         if abs_pitch > self.rollover_threshold or abs_roll > self.rollover_threshold:
-            self.recovery_state = 'FLIPPED_RECOVERY'
-            # Apply rapid oscillatory track torque to dislodge and self-right
-            oscillation = math.sin(current_time * 8.0)
-            rec_v = 0.3 * oscillation
-            rec_w = 1.2 * math.copysign(1.0, oscillation)
-            return rec_v, rec_w, False, 999.0, 'CRITICAL_FLIPPED'
+            self.recovery_state = 'TIPPED'
+            return 0.0, 0.0, False, 0.0, 'EMERGENCY_STOP_TILT'
 
         # -------------------------------------------------------------
         # 2. PRE-TIP ANTI-ROLLOVER STABILIZATION REFLEX
@@ -118,7 +112,7 @@ class PhysicsBasedPathTracker:
         curvature = 0.0 if L < 1e-3 else (2.0 * local_y) / (L * L)
 
         # -------------------------------------------------------------
-        # 6. TERRAIN & ELEVATION SLOPE ADAPTIVE SPEED REGULATION
+        # 6. TERRAIN, ELEVATION & OBSTACLE ADAPTIVE SPEED REGULATION
         # -------------------------------------------------------------
         nominal_speed = lookahead_pt.get('speed', 0.8)
         terrain_slope = lookahead_pt.get('slope', 0.0)
@@ -133,8 +127,15 @@ class PhysicsBasedPathTracker:
             target_v = nominal_speed
             stability_status = 'NORMAL'
 
-        # Reduce speed during sharp turns to avoid track slippage and tipping
-        turn_factor = 1.0 / (1.0 + 2.5 * abs(curvature))
+        # Proactive obstacle clearance speed reduction: prevent dashing into obstacles
+        if min_clearance < 2.0:
+            clearance_factor = np.clip((min_clearance - 0.4) / 1.6, 0.25, 1.0)
+            target_v *= clearance_factor
+            stability_status = 'OBSTACLE_AVOIDANCE'
+
+        # Reduce speed during sharp turns / Gemini bypass maneuvers
+        total_turn_intensity = abs(curvature) + 1.2 * abs(gemini_steering_bias)
+        turn_factor = 1.0 / (1.0 + 2.5 * total_turn_intensity)
         target_v *= turn_factor
 
         # Deceleration profile approaching Point B
@@ -157,13 +158,15 @@ class PhysicsBasedPathTracker:
 
         self.last_cmd_v = cmd_v
 
-        # 8. Compute Angular Velocity
-        cmd_w = np.clip(curvature * cmd_v, -self.max_angular_speed, self.max_angular_speed)
+        # 8. Compute Angular Velocity (Blending Pure Pursuit with Gemini Tactical Bias)
+        pure_w = curvature * cmd_v
+        combined_w = pure_w + (gemini_steering_bias * 1.35)
+        cmd_w = np.clip(combined_w, -self.max_angular_speed, self.max_angular_speed)
 
-        # In-place pivot if heading error is large
+        # In-place pivot if heading error is large or tight bypass required
         heading_err = math.atan2(local_y, local_x)
-        if abs(heading_err) > math.radians(45.0):
-            cmd_v = 0.18
-            cmd_w = np.clip(heading_err * 2.2, -self.max_angular_speed, self.max_angular_speed)
+        if abs(heading_err) > math.radians(45.0) or (min_clearance < 0.70 and abs(gemini_steering_bias) > 0.4):
+            cmd_v = 0.16
+            cmd_w = np.clip((heading_err * 2.0) + (gemini_steering_bias * 1.5), -self.max_angular_speed, self.max_angular_speed)
 
         return cmd_v, cmd_w, False, dist_to_goal, stability_status

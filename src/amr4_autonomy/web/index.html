@@ -122,6 +122,27 @@
                     </div>
                 </div>
 
+                <!-- Google Gemini AI Multimodal Brain Panel -->
+                <div class="telemetry-card gemini-card" style="margin-top: 15px; border-left: 3px solid #b05cff; background: rgba(176, 92, 255, 0.08); padding: 12px; border-radius: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="color: #d8a8ff; font-weight: 700; font-size: 0.85rem;">🤖 GOOGLE GEMINI MULTIMODAL BRAIN (VLA)</span>
+                        <span id="gemini-engine-badge" class="badge-tag" style="background: rgba(176, 92, 255, 0.3); color: #fff; padding: 2px 6px; font-size: 0.7rem; border-radius: 3px;">GEMINI VLA REFLEX</span>
+                    </div>
+                    <div style="font-size: 0.8rem; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                        <div><strong>ACTION:</strong> <span id="gemini-action-pill" style="padding: 2px 8px; border-radius: 4px; background: rgba(0, 255, 170, 0.2); color: #00ffaa; font-weight: 700;">FOLLOW_PATH</span></div>
+                        <div style="color: #8fa3bf; font-size: 0.75rem;">CONFIDENCE: <strong id="gemini-confidence" style="color: #00d2ff;">98%</strong></div>
+                    </div>
+                    <div id="gemini-reasoning" style="font-size: 0.78rem; color: #cfd9e8; background: rgba(0, 0, 0, 0.4); padding: 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.08); min-height: 38px; margin-bottom: 10px;">
+                        Forward terrain corridor is open and safe. Proceeding along planned trajectory.
+                    </div>
+                    <!-- Gemini API Key Input -->
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <input type="password" id="input-gemini-key" placeholder="Enter Gemini API Key (AIzaSy...)" style="flex: 1; padding: 6px 10px; font-size: 0.75rem; background: #0c1017; border: 1px solid #3d2b56; color: #fff; border-radius: 4px;">
+                        <button id="btnSaveGeminiKey" class="btn" style="padding: 6px 12px; font-size: 0.75rem; background: #7c2dcf; border-color: #b05cff; color: #fff; white-space: nowrap;">🔑 CONNECT KEY</button>
+                    </div>
+                    <div id="gemini-key-status" style="font-size: 0.7rem; color: #8fa3bf; margin-top: 4px;">Enter API Key to enable Cloud Gemini Vision reasoning. Real-time 30Hz Spatial Obstacle Reflex is active.</div>
+                </div>
+
                 <!-- Arrival Banner -->
                 <div id="arrival-banner" class="arrival-banner hidden">
                     🎉 DESTINATION B REACHED SUCCESSFULLY!

@@ -36,6 +36,19 @@ class DeathValleyTerrainAnalyzer:
 
     def _load_mesh(self):
         if not os.path.exists(self.mesh_path):
+            candidates = [
+                '/home/ubuntu/sih_ws/install/death_valley_world/share/death_valley_world/models/death_valley_terrain/meshes/death_valley_visual.obj',
+                '/home/ubuntu/sih_ws/src/death_valley_world/models/death_valley_terrain/meshes/death_valley_visual.obj',
+                '/home/ubuntu/sih_ws/src/death_valley_world/meshes/death_valley_visual.obj',
+                '/home/joshika/Desktop/SIH/src/death_valley_world/models/death_valley_terrain/meshes/death_valley_visual.obj',
+                '/home/joshika/Desktop/SIH/src/death_valley_world/meshes/death_valley_visual.obj',
+            ]
+            for c in candidates:
+                if os.path.exists(c):
+                    self.mesh_path = c
+                    break
+
+        if not os.path.exists(self.mesh_path):
             print(f'[TerrainAnalyzer] Warning: Mesh file {self.mesh_path} not found.')
             return
 

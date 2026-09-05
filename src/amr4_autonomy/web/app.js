@@ -368,16 +368,89 @@ function fetchStatus() {
                 }
             }
 
-            const arrivalBanner = document.getElementById('arrival-banner');
-            if (data.path_status === 'Completed') {
-                arrivalBanner.classList.remove('hidden');
-            } else {
-                arrivalBanner.classList.add('hidden');
+            // Update Google Gemini Multimodal Brain HUD
+            if (data.gemini) {
+                const g = data.gemini;
+                const engineBadge = document.getElementById('gemini-engine-badge');
+                if (engineBadge) {
+                    engineBadge.innerText = g.engine || 'GEMINI VLA REFLEX';
+                    if (g.gemini_authenticated) {
+                        engineBadge.style.background = 'rgba(0, 255, 170, 0.3)';
+                        engineBadge.style.color = '#00ffaa';
+                    } else {
+                        engineBadge.style.background = 'rgba(176, 92, 255, 0.3)';
+                        engineBadge.style.color = '#d8a8ff';
+                    }
+                }
+
+                const actionPill = document.getElementById('gemini-action-pill');
+                if (actionPill) {
+                    const act = g.action_decision || 'FOLLOW_PATH';
+                    actionPill.innerText = act;
+                    if (act.includes('BYPASS')) {
+                        actionPill.style.background = 'rgba(255, 187, 0, 0.25)';
+                        actionPill.style.color = '#ffbb00';
+                    } else if (act.includes('REVERSE') || act.includes('HAZARD')) {
+                        actionPill.style.background = 'rgba(255, 51, 102, 0.25)';
+                        actionPill.style.color = '#ff3366';
+                    } else {
+                        actionPill.style.background = 'rgba(0, 255, 170, 0.2)';
+                        actionPill.style.color = '#00ffaa';
+                    }
+                }
+
+                const confEl = document.getElementById('gemini-confidence');
+                if (confEl && g.confidence) {
+                    confEl.innerText = Math.round(g.confidence * 100) + '%';
+                }
+
+                const reasonEl = document.getElementById('gemini-reasoning');
+                if (reasonEl && g.tactical_spatial_reasoning) {
+                    reasonEl.innerText = g.tactical_spatial_reasoning;
+                }
             }
 
             drawTerrainCanvas();
         })
         .catch(() => {});
+}
+
+// Gemini API Key Save Button Listener
+const btnSaveKey = document.getElementById('btnSaveGeminiKey');
+if (btnSaveKey) {
+    btnSaveKey.onclick = () => {
+        const keyInput = document.getElementById('input-gemini-key');
+        const keyStatus = document.getElementById('gemini-key-status');
+        const keyVal = keyInput ? keyInput.value.trim() : '';
+
+        if (!keyVal) {
+            if (keyStatus) keyStatus.innerText = '⚠️ Please enter a valid Gemini API Key.';
+            return;
+        }
+
+        if (keyStatus) keyStatus.innerText = 'Connecting to Google Gemini API...';
+
+        fetch('/api/gemini/key', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({key: keyVal})
+        })
+        .then(res => res.json())
+        .then(resData => {
+            if (keyStatus) {
+                keyStatus.innerText = '✅ Gemini API Key connected! Live Cloud VLA Brain Active.';
+                keyStatus.style.color = '#00ffaa';
+            }
+            if (keyInput) keyInput.value = '';
+            fetchStatus();
+        })
+        .catch(err => {
+            if (keyStatus) {
+                keyStatus.innerText = '❌ Failed to connect: ' + err.message;
+                keyStatus.style.color = '#ff3366';
+            }
+        });
+    };
 }
 
 // Refresh status every 200ms

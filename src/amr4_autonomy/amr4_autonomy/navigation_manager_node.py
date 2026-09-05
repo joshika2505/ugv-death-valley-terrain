@@ -15,6 +15,7 @@ from rclpy.qos import qos_profile_sensor_data
 from geometry_msgs.msg import PointStamped, PoseStamped, PoseWithCovarianceStamped, Twist, Point
 from nav_msgs.msg import Odometry, Path, OccupancyGrid
 from sensor_msgs.msg import LaserScan, Image
+from std_msgs.msg import String
 from visualization_msgs.msg import Marker, MarkerArray
 from cv_bridge import CvBridge
 
@@ -99,6 +100,21 @@ class NavigationManagerNode(Node):
         self.perception_obs_pub = self.create_publisher(MarkerArray, '/perception/detected_obstacles', 10)
         self.perception_grid_pub = self.create_publisher(OccupancyGrid, '/perception/traversability_grid', 10)
 
+        # Google Gemini Multimodal VLA Brain State & Interfaces
+        self.gemini_data = {
+            'action_decision': 'FOLLOW_PATH',
+            'tactical_spatial_reasoning': 'Initializing Gemini VLA Brain...',
+            'engine': 'Gemini VLA Reflex',
+            'confidence': 0.95,
+            'gemini_authenticated': False,
+            'steering_bias_rad': 0.0,
+            'speed_recommendation_mps': 0.45
+        }
+        self.gemini_bias = 0.0
+        self.gemini_key_pub = self.create_publisher(String, '/gemini/set_api_key', 10)
+        self.sub_gemini_dec = self.create_subscription(String, '/gemini/decision', self.gemini_decision_cb, 10)
+        self.sub_gemini_bias = self.create_subscription(Twist, '/gemini/nav_bias', self.gemini_bias_cb, 10)
+
         # ROS 2 Subscriptions
         self.sub_odom = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
         self.sub_scan = self.create_subscription(LaserScan, '/scan', self.scan_callback, qos_profile_sensor_data)
@@ -156,8 +172,17 @@ class NavigationManagerNode(Node):
         t_names = ['Safe', 'Difficult', 'High-Slope', 'Critical']
         self.terrain_class_str = t_names[min(t_class, 3)]
 
+    def gemini_decision_cb(self, msg: String):
+        try:
+            self.gemini_data = json.loads(msg.data)
+        except Exception:
+            pass
+
+    def gemini_bias_cb(self, msg: Twist):
+        self.gemini_bias = float(msg.angular.z)
+
     def scan_callback(self, msg):
-        valid = [r for r in msg.ranges if msg.range_min < r < msg.range_max]
+        valid = [r for r in msg.ranges if max(msg.range_min, 0.35) < r < msg.range_max]
         if valid:
             self.min_clearance = min(valid)
 
@@ -453,7 +478,8 @@ class NavigationManagerNode(Node):
             return
 
         cmd_v, cmd_w, arrived, dist_rem, stab_status = self.path_tracker.compute_control(
-            self.robot_pose, (self.robot_pitch, self.robot_roll), self.planned_waypoints, now_sec
+            self.robot_pose, (self.robot_pitch, self.robot_roll), self.planned_waypoints, now_sec,
+            gemini_steering_bias=self.gemini_bias, min_clearance=self.min_clearance
         )
         self.distance_remaining = dist_rem
         self.stability_status = stab_status
@@ -644,6 +670,7 @@ class NavigationManagerNode(Node):
                         'min_clearance': round(node_ref.min_clearance, 2),
                         'terrain_class': node_ref.terrain_class_str,
                         'stability_status': getattr(node_ref, 'stability_status', 'NORMAL'),
+                        'gemini': getattr(node_ref, 'gemini_data', {}),
                         'waypoints_count': len(node_ref.planned_waypoints),
                         'waypoints': node_ref.planned_waypoints[::2] # Decimated for light payload
                     }
@@ -709,6 +736,16 @@ class NavigationManagerNode(Node):
                     elif self.path == '/api/set_point_b':
                         node_ref.set_point_b(data.get('x', 15.0), data.get('y', 15.0))
                         res = {'status': 'success', 'point_b': node_ref.point_b}
+                    elif self.path in ['/api/gemini/key', '/api/set_gemini_key']:
+                        new_key = str(data.get('key', '')).strip()
+                        if new_key:
+                            kmsg = String()
+                            kmsg.data = new_key
+                            node_ref.gemini_key_pub.publish(kmsg)
+                            node_ref.get_logger().info('Dispatched new Gemini API Key to Brain node.')
+                            res = {'status': 'success', 'message': 'Gemini API Key dispatched'}
+                        else:
+                            res = {'status': 'error', 'message': 'Empty API Key'}
                     elif self.path == '/api/plan_path':
                         node_ref.trigger_plan_path(start_from_current=False)
                         res = {'status': 'success', 'waypoints': len(node_ref.planned_waypoints)}
